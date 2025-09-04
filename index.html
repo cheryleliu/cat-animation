@@ -1,147 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Musepiece Cat</title>
+  <meta charset="UTF-8">
+  <title>MusePiece Cat</title>
   <style>
-    body {
+    html, body {
       margin: 0;
-      background: #fefbf6;
-      font-family: 'Helvetica Neue', sans-serif;
-      height: 100vh;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #f5f5f5;
+      font-family: "Arial", sans-serif;
+      position: relative;
       overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
 
     .container {
       position: relative;
       width: 100%;
-      max-width: 420px;
-      aspect-ratio: 9 / 16;
-      overflow: hidden;
-      background: #fefbf6;
+      height: 100%;
     }
 
-    video {
+    .background-video {
+      position: absolute;
       width: 100%;
       height: 100%;
       object-fit: cover;
+      z-index: 1;
     }
 
-    /* 气泡图 */
-    .bubble-img {
+    .bubble {
       position: absolute;
-      width: 100%;
-      max-width: 420px;
-      top: 78px; /* 约等于设计稿上距离顶部的200px */
-      left: 0;
+      top: 12%;
+      left: 8%;
+      width: 320px;
+      max-width: 70%;
       z-index: 2;
-      opacity: 0;
-      animation: fadeIn 1.2s ease forwards, breathe 2.5s ease-in-out infinite;
     }
 
-    /* 打字文本 */
-    .typewriter-text {
+    .bubble img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .bubble-text {
       position: absolute;
-      top: 102px; /* 文本相对气泡图的中心位置 */
-      left: 50%;
-      transform: translateX(-50%);
-      width: 65%;
-      max-width: 270px;
-      text-align: center;
-      font-size: 15px;
-      font-weight: 500;
-      color: #444;
-      z-index: 3;
-      white-space: normal;
-      word-wrap: break-word;
+      top: 15%;
+      left: 12%;
+      right: 12%;
+      font-size: 18px;
+      color: #333;
       line-height: 1.4;
-      border-right: 2px solid #444;
-      overflow: hidden;
-      opacity: 0;
-      animation: fadeIn 1s ease 0.8s forwards;
+      z-index: 3;
+      word-wrap: break-word;
     }
 
-    /* 输入框图 */
-    .inputbox-img {
+    .input-box {
       position: absolute;
-      width: 100%;
-      max-width: 420px;
-      bottom: 47px; /* 约等于设计稿上距离底部的120px */
-      left: 0;
+      bottom: 5%;
+      left: 10%;
+      width: 80%;
+      max-width: 400px;
       z-index: 2;
-      opacity: 0;
-      pointer-events: none;
-      animation: fadeIn 1.2s ease 1.5s forwards;
     }
 
-    /* 动画效果 */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes breathe {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.02); }
-      100% { transform: scale(1); }
+    .input-box img {
+      width: 100%;
+      height: auto;
+      display: block;
     }
   </style>
 </head>
 <body>
-
   <div class="container">
-    <!-- 猫咪动画视频 -->
-    <video id="catVideo" autoplay muted playsinline preload="auto"></video>
+    <!-- 背景视频 -->
+    <video class="background-video" autoplay muted loop playsinline>
+      <source src="cat-blink-loop.mp4" type="video/mp4" />
+    </video>
 
-    <!-- 气泡图 -->
-    <img src="cat_bubble.png" alt="bubble" class="bubble-img" />
+    <!-- 猫咪对话气泡 -->
+    <div class="bubble">
+      <img src="cat_bubble.png" alt="Speech Bubble">
+      <div class="bubble-text">Mew~ Been waiting for you.</div>
+    </div>
 
-    <!-- 气泡内文字 -->
-    <div class="typewriter-text" id="typed"></div>
-
-    <!-- 输入框图 -->
-    <img src="input_box.png" alt="inputbox" class="inputbox-img" />
+    <!-- 输入框装饰图 -->
+    <div class="input-box">
+      <img src="input_box.png" alt="Input Box">
+    </div>
   </div>
-
-  <script>
-    // 视频播放逻辑
-    const catVideo = document.getElementById("catVideo");
-    const introSrc = "cat-yawn-blink.mp4";
-    const loopSrc = "cat-blink-loop.mp4";
-
-    catVideo.src = introSrc;
-    catVideo.play();
-
-    catVideo.addEventListener("ended", () => {
-      catVideo.src = loopSrc;
-      catVideo.loop = true;
-      catVideo.play();
-    });
-
-    // 打字效果
-    const text = "Mew~ Been waiting for you.";
-    const typed = document.getElementById("typed");
-    let i = 0;
-
-    function typeWriter() {
-      if (i < text.length) {
-        typed.innerHTML += text.charAt(i);
-        i++;
-        setTimeout(typeWriter, 60);
-      }
-    }
-
-    window.onload = function () {
-      setTimeout(() => {
-        typed.style.opacity = 1;
-        typeWriter();
-      }, 800);
-    };
-  </script>
-
 </body>
 </html>
