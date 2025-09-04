@@ -1,57 +1,136 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MusePiece Cat Animation</title>
-
-  <!-- ✅ preload 两个视频 -->
-  <link rel="preload" as="video" href="cat-yawn-blink.mp4" type="video/mp4" />
-  <link rel="preload" as="video" href="cat-blink-loop.mp4" type="video/mp4" />
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Musepiece Cat</title>
   <style>
     body {
       margin: 0;
-      background-color: black;
+      background: #fefbf6;
+      font-family: 'Helvetica Neue', sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 9/16;
       overflow: hidden;
     }
+
     video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
-      display: none;
     }
-    video.active {
-      display: block;
+
+    /* 气泡图片 */
+    .bubble-img {
+      position: absolute;
+      top: 5%;
+      left: 5%;
+      width: 70%;
+      max-width: 280px;
+      z-index: 2;
+      animation: fadeIn 1.2s ease forwards, breathe 2.5s ease-in-out infinite;
+      opacity: 0;
+    }
+
+    /* 打字动画文字 */
+    .typewriter-text {
+      position: absolute;
+      top: 12%;
+      left: 12%;
+      font-size: 15px;
+      font-weight: 500;
+      color: #444;
+      z-index: 3;
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 2px solid #444;
+      opacity: 0;
+      animation: fadeIn 1s ease 0.8s forwards;
+    }
+
+    /* 输入框图片 */
+    .inputbox-img {
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 75%;
+      max-width: 300px;
+      z-index: 2;
+      animation: fadeIn 1.2s ease 1.5s forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes breathe {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
     }
   </style>
 </head>
-
 <body>
 
-  <!-- 💤 打哈欠视频 -->
-  <video id="yawnVideo" class="active" autoplay muted playsinline preload="auto" poster="cover.jpg">
-    <source src="cat-yawn-blink.mp4" type="video/mp4" />
-    <p>你的浏览器不支持 video 标签。</p>
-  </video>
+  <div class="container">
+    <!-- 猫咪视频播放：先打哈欠，再眨眼 -->
+    <video id="catVideo" autoplay muted playsinline preload="auto"></video>
 
-  <!-- 👀 眨眼循环视频 -->
-  <video id="blinkVideo" muted playsinline loop preload="auto">
-    <source src="cat-blink-loop.mp4" type="video/mp4" />
-  </video>
+    <!-- 气泡 + 打字 -->
+    <img src="cat_bubble.png" alt="bubble" class="bubble-img" />
+    <div class="typewriter-text" id="typed"></div>
+
+    <!-- 输入框图片 -->
+    <img src="input_box.png" alt="inputbox" class="inputbox-img" />
+  </div>
 
   <script>
-    const yawnVideo = document.getElementById('yawnVideo');
-    const blinkVideo = document.getElementById('blinkVideo');
+    // 猫咪视频播放逻辑
+    const catVideo = document.getElementById("catVideo");
+    const introSrc = "cat-yawn-blink.mp4";
+    const loopSrc = "cat-blink-loop.mp4";
 
-    yawnVideo.addEventListener('ended', () => {
-      yawnVideo.classList.remove('active');
-      blinkVideo.classList.add('active');
-      blinkVideo.play();
+    catVideo.src = introSrc;
+    catVideo.play();
+
+    catVideo.addEventListener("ended", () => {
+      catVideo.src = loopSrc;
+      catVideo.loop = true;
+      catVideo.play();
     });
+
+    // 打字效果逻辑
+    const text = "Mew~ Been waiting for you.";
+    const typed = document.getElementById("typed");
+    let i = 0;
+
+    function typeWriter() {
+      if (i < text.length) {
+        typed.innerHTML += text.charAt(i);
+        i++;
+        setTimeout(typeWriter, 60);
+      }
+    }
+
+    window.onload = function () {
+      setTimeout(() => {
+        typed.style.opacity = 1;
+        typeWriter();
+      }, 800);
+    };
   </script>
 
 </body>
