@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cat Animation</title>
+  <title>MusePiece Cat Animation</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
       background-color: black;
+      overflow: hidden;
     }
     video {
       width: 100vw;
@@ -18,18 +18,19 @@
     }
   </style>
 </head>
+
 <body>
 
-  <!-- 首先播放“打哈欠”视频，加载封面图 -->
+  <!-- 🐱 开场动画：打哈欠一次，结束后自动切换为眨眼循环 -->
   <video id="catVideo" autoplay muted playsinline preload="auto" poster="cover.jpg">
     <source src="cat-yawn-blink.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
+    <p>你的浏览器不支持 video 标签。</p>
   </video>
 
   <script>
     const video = document.getElementById('catVideo');
 
-    // 当“打哈欠”视频播放结束后，切换成“眨眼”循环动画
+    // 打哈欠视频播放结束后，切换成眨眼循环视频
     video.addEventListener('ended', () => {
       video.src = 'cat-blink-loop.mp4';
       video.loop = true;
