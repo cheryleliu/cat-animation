@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MusePiece Cat Animation</title>
+
+  <!-- ✅ 提前加载眨眼循环视频，防止卡顿 -->
+  <link rel="preload" as="video" href="cat-blink-loop.mp4" type="video/mp4" />
+
   <style>
     body {
       margin: 0;
@@ -21,7 +25,7 @@
 
 <body>
 
-  <!-- 🐱 开场动画：打哈欠一次，结束后自动切换为眨眼循环 -->
+  <!-- 🐱 开场动画：打哈欠一次，结束后切换为眨眼循环 -->
   <video id="catVideo" autoplay muted playsinline preload="auto" poster="cover.jpg">
     <source src="cat-yawn-blink.mp4" type="video/mp4" />
     <p>你的浏览器不支持 video 标签。</p>
@@ -30,7 +34,7 @@
   <script>
     const video = document.getElementById('catVideo');
 
-    // 打哈欠视频播放结束后，切换成眨眼循环视频
+    // 打哈欠视频播放完后切换到眨眼循环视频
     video.addEventListener('ended', () => {
       video.src = 'cat-blink-loop.mp4';
       video.loop = true;
