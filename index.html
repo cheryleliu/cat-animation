@@ -20,8 +20,9 @@
       position: relative;
       width: 100%;
       max-width: 420px;
-      aspect-ratio: 9/16;
+      aspect-ratio: 9 / 16;
       overflow: hidden;
+      background: #fefbf6;
     }
 
     video {
@@ -30,47 +31,54 @@
       object-fit: cover;
     }
 
-    /* 气泡图片 */
+    /* 气泡图 */
     .bubble-img {
       position: absolute;
-      top: 5%;
-      left: 5%;
-      width: 70%;
-      max-width: 280px;
+      width: 100%;
+      max-width: 420px;
+      top: 78px; /* 约等于设计稿上距离顶部的200px */
+      left: 0;
       z-index: 2;
-      animation: fadeIn 1.2s ease forwards, breathe 2.5s ease-in-out infinite;
       opacity: 0;
+      animation: fadeIn 1.2s ease forwards, breathe 2.5s ease-in-out infinite;
     }
 
-    /* 打字动画文字 */
+    /* 打字文本 */
     .typewriter-text {
       position: absolute;
-      top: 12%;
-      left: 12%;
+      top: 102px; /* 文本相对气泡图的中心位置 */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 65%;
+      max-width: 270px;
+      text-align: center;
       font-size: 15px;
       font-weight: 500;
       color: #444;
       z-index: 3;
-      white-space: nowrap;
-      overflow: hidden;
+      white-space: normal;
+      word-wrap: break-word;
+      line-height: 1.4;
       border-right: 2px solid #444;
+      overflow: hidden;
       opacity: 0;
       animation: fadeIn 1s ease 0.8s forwards;
     }
 
-    /* 输入框图片 */
+    /* 输入框图 */
     .inputbox-img {
       position: absolute;
-      bottom: 5%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 75%;
-      max-width: 300px;
+      width: 100%;
+      max-width: 420px;
+      bottom: 47px; /* 约等于设计稿上距离底部的120px */
+      left: 0;
       z-index: 2;
-      animation: fadeIn 1.2s ease 1.5s forwards;
       opacity: 0;
+      pointer-events: none;
+      animation: fadeIn 1.2s ease 1.5s forwards;
     }
 
+    /* 动画效果 */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
@@ -86,19 +94,21 @@
 <body>
 
   <div class="container">
-    <!-- 猫咪视频播放：先打哈欠，再眨眼 -->
+    <!-- 猫咪动画视频 -->
     <video id="catVideo" autoplay muted playsinline preload="auto"></video>
 
-    <!-- 气泡 + 打字 -->
+    <!-- 气泡图 -->
     <img src="cat_bubble.png" alt="bubble" class="bubble-img" />
+
+    <!-- 气泡内文字 -->
     <div class="typewriter-text" id="typed"></div>
 
-    <!-- 输入框图片 -->
+    <!-- 输入框图 -->
     <img src="input_box.png" alt="inputbox" class="inputbox-img" />
   </div>
 
   <script>
-    // 猫咪视频播放逻辑
+    // 视频播放逻辑
     const catVideo = document.getElementById("catVideo");
     const introSrc = "cat-yawn-blink.mp4";
     const loopSrc = "cat-blink-loop.mp4";
@@ -112,7 +122,7 @@
       catVideo.play();
     });
 
-    // 打字效果逻辑
+    // 打字效果
     const text = "Mew~ Been waiting for you.";
     const typed = document.getElementById("typed");
     let i = 0;
