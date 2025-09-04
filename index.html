@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MusePiece Cat Animation</title>
 
-  <!-- ✅ 提前加载眨眼循环视频，防止卡顿 -->
+  <!-- ✅ preload 两个视频 -->
+  <link rel="preload" as="video" href="cat-yawn-blink.mp4" type="video/mp4" />
   <link rel="preload" as="video" href="cat-blink-loop.mp4" type="video/mp4" />
 
   <style>
@@ -15,9 +16,15 @@
       overflow: hidden;
     }
     video {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: 100vh;
       object-fit: cover;
+      display: none;
+    }
+    video.active {
       display: block;
     }
   </style>
@@ -25,21 +32,25 @@
 
 <body>
 
-  <!-- 🐱 开场动画：打哈欠一次，结束后切换为眨眼循环 -->
-  <video id="catVideo" autoplay muted playsinline preload="auto" poster="cover.jpg">
+  <!-- 💤 打哈欠视频 -->
+  <video id="yawnVideo" class="active" autoplay muted playsinline preload="auto" poster="cover.jpg">
     <source src="cat-yawn-blink.mp4" type="video/mp4" />
     <p>你的浏览器不支持 video 标签。</p>
   </video>
 
-  <script>
-    const video = document.getElementById('catVideo');
+  <!-- 👀 眨眼循环视频 -->
+  <video id="blinkVideo" muted playsinline loop preload="auto">
+    <source src="cat-blink-loop.mp4" type="video/mp4" />
+  </video>
 
-    // 打哈欠视频播放完后切换到眨眼循环视频
-    video.addEventListener('ended', () => {
-      video.src = 'cat-blink-loop.mp4';
-      video.loop = true;
-      video.load();
-      video.play();
+  <script>
+    const yawnVideo = document.getElementById('yawnVideo');
+    const blinkVideo = document.getElementById('blinkVideo');
+
+    yawnVideo.addEventListener('ended', () => {
+      yawnVideo.classList.remove('active');
+      blinkVideo.classList.add('active');
+      blinkVideo.play();
     });
   </script>
 
