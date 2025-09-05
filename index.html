@@ -25,8 +25,8 @@
       position:absolute;
       top: calc(var(--bubble-top) + env(safe-area-inset-top,0px));
       left:50%;
-      width: min(var(--bubble-width),780px);
-      height: calc(min(var(--bubble-width),780px) / var(--bubble-aspect));
+      width: min(var(--bubble-width),820px); /* PC 更大上限 */
+      height: calc(min(var(--bubble-width),820px) / var(--bubble-aspect));
       transform: translateX(-50%);
       background: url("cat_bubble.png") center/contain no-repeat;
       overflow: visible;
@@ -36,7 +36,9 @@
     .bubble__text {
       --padX: 8%; --padTop: 11%; --padBottom: 13%;
       position:absolute; left:var(--padX); right:var(--padX); top:var(--padTop); bottom:var(--padBottom);
-      text-align:center; color:#0f172a; font-size:26px; line-height:1.35; word-break:break-word;
+      text-align:center; color:#0f172a;
+      font-size:22px; /* 默认小一号 */
+      line-height:1.35; word-break:break-word;
     }
 
     /* 输入框：用你的浅绿色 PNG */
@@ -56,11 +58,12 @@
     .composer input[type="text"] {
       width:100%; border:none; outline:none; background:transparent;
       font-size:18px; line-height:1.2;
-      color:#fff; caret-color:#fff; text-shadow:0 0 1px rgba(0,0,0,.25);
+      color:#fff !important; caret-color:#fff !important;
+      text-shadow:0 0 1px rgba(0,0,0,.25);
     }
     .composer input::placeholder,
     .composer input::-webkit-input-placeholder {
-      color: rgba(255,255,255,.85);
+      color: rgba(255,255,255,.88) !important;
     }
     .composer input:focus::placeholder,
     .composer input:focus::-webkit-input-placeholder {
@@ -100,12 +103,58 @@
     </main>
   </div>
   <script>
-    const vidIntro=document.getElementById('vidIntro'),vidLoop=document.getElementById('vidLoop'),gate=document.getElementById('gate'),bubbleText=document.getElementById('bubbleText'),input=document.getElementById('userInput'),form=document.getElementById('composer');
+    const vidIntro=document.getElementById('vidIntro'),
+          vidLoop=document.getElementById('vidLoop'),
+          gate=document.getElementById('gate'),
+          bubbleText=document.getElementById('bubbleText'),
+          input=document.getElementById('userInput'),
+          form=document.getElementById('composer');
+
     async function startPlayback(){ try{ await vidIntro.play(); gate.hidden=true; } catch{ gate.hidden=false; } }
     function swapToLoop(){ vidIntro.hidden=true; vidLoop.hidden=false; vidLoop.currentTime=0; vidLoop.play().catch(()=>{}); }
-    function fitText(el,{min=14,max=30}={}){ const box=el.parentElement; let size=max; el.style.fontSize=size+'px'; while(size>min&&el.scrollHeight>box.clientHeight){ size-=1; el.style.fontSize=size+'px'; } }
-    function autoAspect(varName,src){ const img=new Image(); img.onload=()=>{ if(img.naturalWidth&&img.naturalHeight){ document.documentElement.style.setProperty(varName,img.naturalWidth/img.naturalHeight); } }; img.src=src+'?v='+Date.now(); }
-    (function init(){ vidIntro.addEventListener('error',swapToLoop); vidIntro.addEventListener('ended',swapToLoop); if(document.visibilityState==='visible')startPlayback(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&!gate.hidden)startPlayback(); }); gate.addEventListener('click',startPlayback,{passive:true}); fitText(bubbleText); autoAspect('--bubble-aspect','cat_bubble.png'); autoAspect('--composer-aspect','input_box.png'); form.addEventListener('submit',e=>{ e.preventDefault(); const text=(input.value||'').trim(); if(!text)return; bubbleText.textContent=text; fitText(bubbleText); input.value=''; setTimeout(()=>{ const replies=['Got it. I’m here. Want to tell me a bit more?','I’m listening. What feeling is strongest right now?','Let’s breathe together for 3 seconds… and then keep going.']; bubbleText.textContent=replies[Math.floor(Math.random()*replies.length)]; fitText(bubbleText); },900); }); })();
+
+    function fitText(el,{min=14,max=26}={}){  /* 改：max 30 -> 26 */
+      const box=el.parentElement; let size=max; el.style.fontSize=size+'px';
+      while(size>min&&el.scrollHeight>box.clientHeight){ size-=1; el.style.fontSize=size+'px'; }
+    }
+
+    function autoAspect(varName,src){
+      const img=new Image();
+      img.onload=()=>{ if(img.naturalWidth&&img.naturalHeight){
+        document.documentElement.style.setProperty(varName,img.naturalWidth/img.naturalHeight);
+      }};
+      img.src=src+'?v='+Date.now();
+    }
+
+    (function init(){
+      vidIntro.addEventListener('error',swapToLoop);
+      vidIntro.addEventListener('ended',swapToLoop);
+      if(document.visibilityState==='visible')startPlayback();
+      document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&!gate.hidden)startPlayback(); });
+      gate.addEventListener('click',startPlayback,{passive:true});
+
+      fitText(bubbleText,{min:14,max:26});
+      autoAspect('--bubble-aspect','cat_bubble.png');
+      autoAspect('--composer-aspect','input_box.png');
+
+      form.addEventListener('submit',e=>{
+        e.preventDefault();
+        const text=(input.value||'').trim();
+        if(!text)return;
+        bubbleText.textContent=text;
+        fitText(bubbleText,{min:14,max:26});
+        input.value='';
+        setTimeout(()=>{
+          const replies=[
+            'Got it. I’m here. Want to tell me a bit more?',
+            'I’m listening. What feeling is strongest right now?',
+            'Let’s breathe together for 3 seconds… and then keep going.'
+          ];
+          bubbleText.textContent=replies[Math.floor(Math.random()*replies.length)];
+          fitText(bubbleText,{min:14,max:26});
+        },900);
+      });
+    })();
   </script>
 </body>
 </html>
