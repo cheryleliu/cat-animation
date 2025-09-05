@@ -8,76 +8,85 @@
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; background:#0b0b0b; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
     .page { height: 100dvh; width: 100vw; display: grid; place-items: center; }
-    .stage { position: relative; aspect-ratio: 9/16; width: min(100vw, 56.25vh); background: #000; overflow: hidden; border-radius: 16px; }
+    .stage { position: relative; aspect-ratio: 9/16; width: min(100vw, 56.25vh); background:#000; overflow:hidden; border-radius:16px; }
 
-    /* 视频层，放大 3% 避免尾巴贴边 */
-    :root { --video-scale: 1.03; --video-pos-x: 50%; --video-pos-y: 52%; }
+    /* —— 视频（防尾巴贴边） —— */
+    :root { --video-scale:1.03; --video-pos-x:50%; --video-pos-y:52%; }
     .video-layer { position:absolute; inset:0; overflow:hidden; }
-    video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position: var(--video-pos-x) var(--video-pos-y); transform:scale(var(--video-scale)); }
+    video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:var(--video-pos-x) var(--video-pos-y); transform:scale(var(--video-scale)); }
 
     .overlay { position:absolute; inset:0; pointer-events:none; }
 
-    /* 气泡：只用你的 PNG，保留尾巴 */
-    .bubble {
-      --bubble-width: 96%;
-      --bubble-aspect: 1.7;
-      --bubble-top: 6%;
+    /* —— 气泡（只用你的 PNG，带尾巴，不裁剪） —— */
+    .bubble{
+      --bubble-width: 98%;      /* 基准更大 */
+      --bubble-aspect: 1.70;    /* 会被 PNG 实际比例覆盖 */
+      --bubble-top: 5.5%;
       position:absolute;
       top: calc(var(--bubble-top) + env(safe-area-inset-top,0px));
       left:50%;
-      width: min(var(--bubble-width),820px); /* PC 更大上限 */
-      height: calc(min(var(--bubble-width),820px) / var(--bubble-aspect));
+      width: min(var(--bubble-width), 880px);                 /* 桌面最大 880px */
+      height: calc(min(var(--bubble-width), 880px) / var(--bubble-aspect));
       transform: translateX(-50%);
       background: url("cat_bubble.png") center/contain no-repeat;
-      overflow: visible;
+      overflow: visible;     /* 允许尾巴超出 */
       border-radius: 0;
-      filter: drop-shadow(0 6px 12px rgba(0,0,0,.18));
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,.14));
     }
-    .bubble__text {
-      --padX: 8%; --padTop: 11%; --padBottom: 13%;
+    .bubble__text{
+      /* 扩大文本安全区，让文字不用太挤 */
+      --padX: 7%;
+      --padTop: 8%;
+      --padBottom: 10%;
       position:absolute; left:var(--padX); right:var(--padX); top:var(--padTop); bottom:var(--padBottom);
       text-align:center; color:#0f172a;
-      font-size:22px; /* 默认小一号 */
-      line-height:1.35; word-break:break-word;
+      font-size:20px;          /* 默认更小 */
+      line-height:1.30; letter-spacing:.2px;
+      word-break:break-word; hyphens:auto; overflow:hidden;
     }
 
-    /* 输入框：用你的浅绿色 PNG */
-    .composer {
+    /* —— 输入框：你的 PNG + 白色文字 —— */
+    .composer{
       --composer-width: 92%;
-      --composer-aspect: 7.5;
+      --composer-aspect: 7.5;  /* 会被 PNG 实际比例覆盖 */
       --composer-bottom: 3%;
-      position:absolute;
+      position:absolute; left:50%;
       bottom: calc(var(--composer-bottom) + env(safe-area-inset-bottom,0px));
-      left:50%; transform:translateX(-50%);
       width: var(--composer-width);
       height: calc(var(--composer-width) / var(--composer-aspect));
+      transform: translateX(-50%);
       background: url("input_box.png") center/100% 100% no-repeat;
       display:grid; grid-template-columns:1fr auto; align-items:center; padding:0 14px; gap:10px;
       pointer-events:auto; z-index:10;
     }
-    .composer input[type="text"] {
+    .composer input[type="text"]{
       width:100%; border:none; outline:none; background:transparent;
       font-size:18px; line-height:1.2;
       color:#fff !important; caret-color:#fff !important;
       text-shadow:0 0 1px rgba(0,0,0,.25);
     }
     .composer input::placeholder,
-    .composer input::-webkit-input-placeholder {
-      color: rgba(255,255,255,.88) !important;
-    }
+    .composer input::-webkit-input-placeholder{ color:rgba(255,255,255,.88) !important; }
     .composer input:focus::placeholder,
-    .composer input:focus::-webkit-input-placeholder {
-      opacity:.55;
-    }
-    .btn { border:none; border-radius:14px; padding:10px 14px; font-size:16px; background:#111827; color:#fff; cursor:pointer; }
+    .composer input:focus::-webkit-input-placeholder{ opacity:.55; }
+    .btn{ border:none; border-radius:14px; padding:10px 14px; font-size:16px; background:#111827; color:#fff; cursor:pointer; }
 
-    .gate { position:absolute; inset:0; display:grid; place-items:center; background: rgba(0,0,0,.5); color:#fff; pointer-events:auto; }
+    .gate{ position:absolute; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.5); color:#fff; pointer-events:auto; }
     .gate[hidden]{ display:none; }
 
-    /* 手机端缩小气泡避免挡猫 */
-    @media(max-width:480px){
-      .bubble { --bubble-width:84%; --bubble-top:5%; width:var(--bubble-width); height:calc(var(--bubble-width)/var(--bubble-aspect)); }
-      .composer { --composer-bottom: 2.2%; }
+    /* —— 手机竖屏：气泡略缩小，避免挡猫 —— */
+    @media (max-width: 480px){
+      .bubble{
+        --bubble-width: 92%;     /* 从 84% → 92%：你说“太小”，这里放大 */
+        --bubble-top: 5%;
+        width: var(--bubble-width);
+        height: calc(var(--bubble-width) / var(--bubble-aspect));
+      }
+      .bubble__text{
+        font-size: 19px;         /* 手机默认再小一点点 */
+        --padX: 8%; --padTop: 9%; --padBottom: 11%;
+      }
+      .composer{ --composer-bottom: 2.2%; }
     }
   </style>
 </head>
@@ -93,66 +102,79 @@
         </video>
       </div>
       <div class="overlay">
-        <section class="bubble"><div class="bubble__text" id="bubbleText">Mew~ Been waiting for you.</div></section>
+        <section class="bubble">
+          <div class="bubble__text" id="bubbleText">Mew~ Been waiting for you.</div>
+        </section>
+
         <form class="composer" id="composer" autocomplete="off">
           <input id="userInput" type="text" placeholder="Type what you’re feeling…" maxlength="280"/>
           <button class="btn" type="submit">Send</button>
         </form>
+
         <div class="gate" id="gate"><div>Tap to enter 🐾</div></div>
       </div>
     </main>
   </div>
+
   <script>
-    const vidIntro=document.getElementById('vidIntro'),
-          vidLoop=document.getElementById('vidLoop'),
-          gate=document.getElementById('gate'),
-          bubbleText=document.getElementById('bubbleText'),
-          input=document.getElementById('userInput'),
-          form=document.getElementById('composer');
+    const vidIntro = document.getElementById('vidIntro');
+    const vidLoop  = document.getElementById('vidLoop');
+    const gate     = document.getElementById('gate');
+    const bubbleText = document.getElementById('bubbleText');
+    const input    = document.getElementById('userInput');
+    const form     = document.getElementById('composer');
 
-    async function startPlayback(){ try{ await vidIntro.play(); gate.hidden=true; } catch{ gate.hidden=false; } }
-    function swapToLoop(){ vidIntro.hidden=true; vidLoop.hidden=false; vidLoop.currentTime=0; vidLoop.play().catch(()=>{}); }
+    async function startPlayback(){ try{ await vidIntro.play(); gate.hidden = true; } catch{ gate.hidden = false; } }
+    function swapToLoop(){ vidIntro.hidden = true; vidLoop.hidden = false; vidLoop.currentTime = 0; vidLoop.play().catch(()=>{}); }
 
-    function fitText(el,{min=14,max=26}={}){  /* 改：max 30 -> 26 */
-      const box=el.parentElement; let size=max; el.style.fontSize=size+'px';
-      while(size>min&&el.scrollHeight>box.clientHeight){ size-=1; el.style.fontSize=size+'px'; }
+    // 文案自动缩放：把上限降到 24，整体更小
+    function fitText(el, {min=14, max=24}={}) {
+      const box = el.parentElement;
+      let size = max;
+      el.style.fontSize = size + 'px';
+      while (size > min && el.scrollHeight > box.clientHeight) {
+        size -= 1; el.style.fontSize = size + 'px';
+      }
     }
 
-    function autoAspect(varName,src){
-      const img=new Image();
-      img.onload=()=>{ if(img.naturalWidth&&img.naturalHeight){
-        document.documentElement.style.setProperty(varName,img.naturalWidth/img.naturalHeight);
-      }};
-      img.src=src+'?v='+Date.now();
+    // 读取 PNG 实际比例，避免被拉伸
+    function autoAspect(varName, src){
+      const img = new Image();
+      img.onload = () => {
+        if (img.naturalWidth && img.naturalHeight) {
+          document.documentElement.style.setProperty(varName, img.naturalWidth / img.naturalHeight);
+        }
+      };
+      img.src = src + '?v=' + Date.now(); // 防缓存
     }
 
     (function init(){
-      vidIntro.addEventListener('error',swapToLoop);
-      vidIntro.addEventListener('ended',swapToLoop);
-      if(document.visibilityState==='visible')startPlayback();
-      document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&!gate.hidden)startPlayback(); });
-      gate.addEventListener('click',startPlayback,{passive:true});
+      vidIntro.addEventListener('error', swapToLoop);
+      vidIntro.addEventListener('ended', swapToLoop);
+      if (document.visibilityState === 'visible') startPlayback();
+      document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'visible' && !gate.hidden) startPlayback(); });
+      gate.addEventListener('click', startPlayback, { passive:true });
 
-      fitText(bubbleText,{min:14,max:26});
+      fitText(bubbleText, {min:14, max:24});
       autoAspect('--bubble-aspect','cat_bubble.png');
       autoAspect('--composer-aspect','input_box.png');
 
-      form.addEventListener('submit',e=>{
+      form.addEventListener('submit', (e)=>{
         e.preventDefault();
-        const text=(input.value||'').trim();
-        if(!text)return;
-        bubbleText.textContent=text;
-        fitText(bubbleText,{min:14,max:26});
-        input.value='';
+        const text = (input.value || '').trim();
+        if (!text) return;
+        bubbleText.textContent = text;
+        fitText(bubbleText, {min:14, max:24});
+        input.value = '';
         setTimeout(()=>{
-          const replies=[
+          const replies = [
             'Got it. I’m here. Want to tell me a bit more?',
             'I’m listening. What feeling is strongest right now?',
             'Let’s breathe together for 3 seconds… and then keep going.'
           ];
-          bubbleText.textContent=replies[Math.floor(Math.random()*replies.length)];
-          fitText(bubbleText,{min:14,max:26});
-        },900);
+          bubbleText.textContent = replies[Math.floor(Math.random()*replies.length)];
+          fitText(bubbleText, {min:14, max:24});
+        }, 900);
       });
     })();
   </script>
