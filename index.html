@@ -1,100 +1,171 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MusePiece Cat</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MusePiece · Cat Demo</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
       margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
-      overflow: hidden;
+      background: #0b0b0b;
+      color: #111;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-
-    .container {
+    .page { height: 100dvh; width: 100vw; display: grid; place-items: center; }
+    .stage {
       position: relative;
-      width: 100vw;
-      height: 100vh;
+      aspect-ratio: 9 / 16;
+      width: min(100vw, 56.25vh);
+      background: #000;
+      overflow: hidden;
+      border-radius: 16px;
     }
-
-    .background-video {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 1;
-    }
-
+    .video-layer { position: absolute; inset: 0; }
+    video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+    .overlay { position: absolute; inset: 0; pointer-events: none; }
     .bubble {
+      --bubble-width: 86%;
+      --bubble-aspect: 1.85;
+      --bubble-top: 6.5%;
+      --bubble-left: 50%;
       position: absolute;
-      top: 10%;
-      left: 8%;
-      width: 300px;
-      z-index: 2;
+      width: var(--bubble-width);
+      height: calc(var(--bubble-width) / var(--bubble-aspect));
+      left: var(--bubble-left);
+      top: var(--bubble-top);
+      transform: translateX(-50%);
+      background: url("cat_bubble.png") center / contain no-repeat;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.25));
+      border-radius: 28px;
     }
-
-    .bubble img {
-      width: 100%;
-      display: block;
-    }
-
-    .bubble-text {
+    .bubble__text {
+      --padX: 8%;
+      --padTop: 12%;
+      --padBottom: 14%;
       position: absolute;
-      top: 16%;
-      left: 12%;
-      width: 260px;
-      font-size: 18px;
-      color: #333;
-      z-index: 3;
-      line-height: 1.4;
+      left: var(--padX);
+      right: var(--padX);
+      top: var(--padTop);
+      bottom: var(--padBottom);
+      display: -webkit-box;
+      -webkit-line-clamp: 7;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: clamp(16px, 2.2vw, 22px);
+      line-height: 1.35;
+      color: #1a1a1a;
+      text-align: center;
       word-wrap: break-word;
     }
-
-    .input-box {
+    .composer {
+      --composer-width: 92%;
+      --composer-aspect: 7.5;
+      --composer-bottom: 3.5%;
       position: absolute;
-      bottom: 5%;
-      left: 50%;
+      width: var(--composer-width);
+      height: calc(var(--composer-width) / var(--composer-aspect));
+      left: 50%; bottom: var(--composer-bottom);
       transform: translateX(-50%);
-      width: 85%;
-      max-width: 400px;
-      z-index: 2;
+      background: url("input_box.png") center / contain no-repeat;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 0 clamp(10px, 2.4%, 16px);
+      gap: clamp(8px, 1.8vw, 12px);
+      pointer-events: auto;
     }
-
-    .input-box img {
+    .composer input[type="text"] {
       width: 100%;
-      display: block;
+      border: none; outline: none;
+      background: transparent;
+      font-size: clamp(15px, 2.1vw, 18px);
+      color: #1a1a1a;
     }
+    .composer input::placeholder { color: #6b7280; }
+    .btn {
+      border: none; outline: none;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: clamp(14px, 2vw, 16px);
+      background: #111827; color: #fff;
+      cursor: pointer;
+    }
+    .gate { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.5); color: #fff; }
+    .gate[hidden] { display: none; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- 背景视频 -->
-    <video class="background-video" autoplay muted loop playsinline>
-      <source src="cat-blink-loop.mp4" type="video/mp4" />
-    </video>
-
-    <!-- 猫咪说话气泡 -->
-    <div class="bubble">
-      <img src="cat_bubble.png" alt="Speech Bubble">
-    </div>
-
-    <!-- 气泡里的文字 -->
-    <div class="bubble-text">
-      Mew~ Been waiting for you.
-    </div>
-
-    <!-- 输入框图片 -->
-    <div class="input-box">
-      <img src="input_box.png" alt="Input Box">
-    </div>
+  <div class="page">
+    <main class="stage" id="stage">
+      <div class="video-layer">
+        <video id="vidIntro" playsinline muted preload="auto">
+          <source src="cat-yawn-blink.mp4" type="video/mp4" />
+        </video>
+        <video id="vidLoop" playsinline muted preload="auto" loop hidden>
+          <source src="cat-blink-loop.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <div class="overlay">
+        <section class="bubble" aria-live="polite" aria-atomic="true">
+          <div class="bubble__text" id="bubbleText">Mew~ Been waiting for you.</div>
+        </section>
+        <form class="composer" id="composer" autocomplete="off">
+          <input id="userInput" type="text" name="q" placeholder="Type what you’re feeling…" maxlength="280" />
+          <button class="btn" id="sendBtn" type="submit">Send</button>
+        </form>
+        <div class="gate" id="gate">
+          <div>Tap to enter 🐾</div>
+        </div>
+      </div>
+    </main>
   </div>
+  <script>
+    const vidIntro = document.getElementById('vidIntro');
+    const vidLoop  = document.getElementById('vidLoop');
+    const gate     = document.getElementById('gate');
+    const bubbleText = document.getElementById('bubbleText');
+    const input = document.getElementById('userInput');
+    const form  = document.getElementById('composer');
+
+    async function startPlayback() {
+      try {
+        await vidIntro.play();
+        gate.hidden = true;
+      } catch (e) {
+        gate.hidden = false;
+      }
+    }
+    function swapToLoop() {
+      vidIntro.hidden = true;
+      vidLoop.hidden = false;
+      vidLoop.currentTime = 0;
+      vidLoop.play().catch(()=>{});
+    }
+    (function init(){
+      vidIntro.addEventListener('error', swapToLoop);
+      vidIntro.addEventListener('ended', swapToLoop);
+      if (document.visibilityState === 'visible') startPlayback();
+      gate.addEventListener('click', startPlayback, { passive: true });
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = (input.value || '').trim();
+        if (!text) return;
+        bubbleText.textContent = text;
+        input.value = '';
+        setTimeout(() => {
+          const replies = [
+            'Got it. I’m here. Want to tell me a bit more?',
+            'I’m listening. What feeling is strongest right now?',
+            'Let’s breathe together for 3 seconds… and then keep going.'
+          ];
+          bubbleText.textContent = replies[Math.floor(Math.random()*replies.length)];
+        }, 900);
+      });
+    })();
+  </script>
 </body>
 </html>
