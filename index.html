@@ -5,113 +5,119 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>MusePiece · Cat Demo</title>
   <style>
-    /* ====== 全局与舞台 ====== */
+    /* ===== 全局 ===== */
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
-      margin: 0; background: #0b0b0b; color: #111;
+      margin: 0; background:#0b0b0b; color:#111;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     }
-    .page { height: 100dvh; width: 100vw; display: grid; place-items: center; }
+    .page { height: 100dvh; width: 100vw; display:grid; place-items:center; }
     .stage {
-      position: relative;
-      aspect-ratio: 9 / 16;
+      position: relative; aspect-ratio: 9 / 16;
       width: min(100vw, 56.25vh);
-      background: #000;
-      overflow: hidden;           /* 放大视频不露边 */
-      border-radius: 16px;
+      background:#000; overflow:hidden; border-radius:16px;
     }
 
-    /* ====== 视频图层（防“尾巴贴边变细”） ====== */
+    /* ===== 视频（防“尾巴贴边变细”） ===== */
     :root{
-      --video-scale: 1.03;   /* 安全边距：默认放大 3% */
-      --video-pos-x: 50%;    /* 左右取景点 */
-      --video-pos-y: 52%;    /* 上下取景点（略抬高，避开底边） */
+      --video-scale: 1.03;      /* 安全边距 */
+      --video-pos-x: 50%;
+      --video-pos-y: 52%;       /* 稍抬高一点 */
     }
-    .video-layer { position: absolute; inset: 0; overflow: hidden; }
+    .video-layer { position:absolute; inset:0; overflow:hidden; }
     video{
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
+      position:absolute; inset:0; width:100%; height:100%;
       object-fit: cover;
       object-position: var(--video-pos-x) var(--video-pos-y);
       transform: scale(var(--video-scale)) translateZ(0);
-      transform-origin: center center;
-      background: #000;
+      transform-origin: center center; background:#000;
     }
 
-    /* ====== 叠加层（气泡 + 输入） ====== */
-    .overlay { position: absolute; inset: 0; pointer-events: none; }
+    /* ===== 覆盖层 ===== */
+    .overlay { position:absolute; inset:0; pointer-events:none; }
 
-    /* 规则半透明气泡：优先显示你的 PNG；只在 PNG 下方做轻微毛玻璃增强可读性 */
+    /* ===== 气泡（只用你的 PNG；不加任何白底/毛玻璃/描边） ===== */
     .bubble{
-      /* 尺寸与位置（PC 更大，移动端通过媒体查询变小） */
-      --bubble-width: 94%;          /* 默认宽度占舞台的百分比（PC 更大） */
-      --bubble-aspect: 1.70;        /* 宽:高；JS 会用图片实际比例覆盖 */
-      --bubble-top: 6%;
+      /* 这几个变量可调：PC 更大、手机媒体查询里会变小 */
+      --bubble-width: 96%;
+      --bubble-aspect: 1.70;        /* JS 会自动改成图片真实比例 */
+      --bubble-top: 6%;             /* 会叠加安全区 */
       --bubble-left: 50%;
-
-      position: absolute;
+      position:absolute;
       left: var(--bubble-left);
-      top: var(--bubble-top);
-      width: min(var(--bubble-width), 740px); /* PC 上限制最大宽度以免过宽 */
-      height: calc(min(var(--bubble-width), 740px) / var(--bubble-aspect));
+      top: calc(var(--bubble-top) + env(safe-area-inset-top, 0px));
+      width: min(var(--bubble-width), 780px);
+      height: calc(min(var(--bubble-width), 780px) / var(--bubble-aspect));
       transform: translateX(-50%);
-
-      /* 只用你的半透明 PNG；透明处可以看到猫 */
+      /* 关键：只渲染你的半透明 PNG，尾巴保留 */
       background: url("cat_bubble.png") center / contain no-repeat;
-      border-radius: 24px;
-      filter: drop-shadow(0 8px 18px rgba(0,0,0,.18));
-      pointer-events: none;
-      overflow: hidden; /* 让 ::before 的毛玻璃不外溢 */
-    }
-    /* 毛玻璃层：只在气泡区域内轻微模糊底部视频，提升可读性且保留通透感 */
-    .bubble::before{
-      content: ""; position: absolute; inset: 0; border-radius: inherit;
-      backdrop-filter: blur(6px) saturate(1.05) brightness(1.03);
-      -webkit-backdrop-filter: blur(6px) saturate(1.05) brightness(1.03);
-      background: rgba(255,255,255,0.08); /* 6%~12% 自行调节透明雾化 */
+      /* 允许 PNG 超出容器边缘（保留尾巴形状） */
+      overflow: visible;
+      /* 不再用圆角，以免裁掉尾巴外沿 */
+      border-radius: 0;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.14));
     }
     .bubble__text{
-      /* 规则气泡的文字安全区 */
+      /* 文字安全区（按你的矩形内部来） */
       --padX: 8%; --padTop: 11%; --padBottom: 13%;
-      position: absolute; left: var(--padX); right: var(--padX); top: var(--padTop); bottom: var(--padBottom);
-      overflow: hidden; word-break: break-word; hyphens: auto; text-align: center;
-      color: #0f172a; line-height: 1.35; letter-spacing: .2px; font-size: 26px; /* JS 会自适应缩放 */
-      /* 轻描边/阴影，半透明背景上更清晰 */
-      text-shadow: 0 1px 1px rgba(255,255,255,.35), 0 0 1px rgba(0,0,0,.08);
+      position:absolute; left:var(--padX); right:var(--padX);
+      top:var(--padTop); bottom:var(--padBottom);
+      overflow:hidden; word-break:break-word; hyphens:auto;
+      text-align:center; color:#0f172a; line-height:1.35; letter-spacing:.2px;
+      font-size:26px; /* JS 会按需缩小，长句不出框 */
     }
 
-    /* 输入框：PNG 优先，自动按真实比例适配 */
+    /* ===== 输入框（只用你的浅绿色 PNG） ===== */
     .composer{
       --composer-width: 92%;
-      --composer-aspect: 7.5;      /* JS 按 PNG 实际比例覆盖 */
-      --composer-bottom: 3.2%;
-      position: absolute; left: 50%; bottom: var(--composer-bottom);
+      --composer-aspect: 7.5;         /* JS 会自动改成图片真实比例 */
+      --composer-bottom: 3%;
+      position:absolute; left:50%;
+      bottom: calc(var(--composer-bottom) + env(safe-area-inset-bottom, 0px));
       width: var(--composer-width);
       height: calc(var(--composer-width) / var(--composer-aspect));
       transform: translateX(-50%);
-
-      background-image: url("input_box.png"), rgba(255,255,255,0.9);
-      background-position: center, center; background-repeat: no-repeat, no-repeat; background-size: 100% 100%, cover;
-      border-radius: 18px; box-shadow: 0 6px 16px rgba(0,0,0,.18); border: 1px solid rgba(0,0,0,.06);
-
-      display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 0 clamp(12px, 2.2%, 16px); gap: clamp(8px, 1.8vw, 12px);
-      pointer-events: auto; z-index: 10;
+      /* 只渲染你的 PNG（半透明、浅绿色） */
+      background: url("input_box.png") center / 100% 100% no-repeat;
+      /* 不加白底，确保半透明真实生效 */
+      border: none; box-shadow: 0 6px 16px rgba(0,0,0,.16);
+      display:grid; grid-template-columns: 1fr auto; align-items:center;
+      padding: 0 clamp(12px, 2.2%, 16px); gap: clamp(8px, 1.8vw, 12px);
+      pointer-events:auto; z-index:10;
     }
-    .composer input[type="text"]{ width: 100%; border: none; outline: none; background: transparent; font-size: 18px; line-height: 1.2; color: #1a1a1a; }
+    .composer input[type="text"]{
+      width:100%; border:none; outline:none; background:transparent;
+      font-size:18px; line-height:1.2; color:#1a1a1a;
+    }
     .composer input::placeholder{ color:#6b7280; opacity:.9; }
-    .btn{ border: none; outline: none; border-radius: 14px; padding: 10px 14px; font-size: 16px; background:#111827; color:#fff; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+    .btn{
+      border:none; outline:none; border-radius:14px; padding:10px 14px;
+      font-size:16px; background:#111827; color:#fff; cursor:pointer;
+      box-shadow:0 4px 12px rgba(0,0,0,.22);
+    }
 
     /* iOS 自动播放门禁 */
-    .gate{ position:absolute; inset:0; display:grid; place-items:center; background: rgba(0,0,0,.5); color:#fff; pointer-events:auto; }
+    .gate{ position:absolute; inset:0; display:grid; place-items:center;
+           background: rgba(0,0,0,.5); color:#fff; pointer-events:auto; }
     .gate[hidden]{ display:none; }
 
-    /* ====== 移动端响应式：缩小气泡，避免遮挡猫 ====== */
+    /* ===== 响应式：手机端把气泡缩小些，不挡猫 ===== */
     @media (max-width: 480px){
-      .bubble{ --bubble-width: 84%; --bubble-top: 5%; width: var(--bubble-width); height: calc(var(--bubble-width) / var(--bubble-aspect)); }
+      .bubble{
+        --bubble-width: 84%;
+        --bubble-top: 5%;
+        width: var(--bubble-width);
+        height: calc(var(--bubble-width) / var(--bubble-aspect));
+      }
       .bubble__text{ --padX: 9%; --padTop: 10%; --padBottom: 12%; }
-      .composer{ --composer-width: 92%; --composer-bottom: 2.6%; }
+      .composer{ --composer-width: 92%; --composer-bottom: 2.2%; }
+    }
+    /* iPad 竖屏微调 */
+    @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait){
+      .bubble{ --bubble-width: 90%; --bubble-top: 6.5%; width: var(--bubble-width);
+               height: calc(var(--bubble-width) / var(--bubble-aspect)); }
     }
   </style>
 </head>
@@ -128,7 +134,7 @@
         </video>
       </div>
 
-      <!-- 叠加层：半透明规则气泡 + 输入框 + 门禁 -->
+      <!-- 覆盖层：半透明气泡 + 输入框 + 门禁 -->
       <div class="overlay">
         <section class="bubble" aria-live="polite" aria-atomic="true">
           <div class="bubble__text" id="bubbleText">Mew~ Been waiting for you.</div>
@@ -151,47 +157,38 @@
 
   <script>
     const $ = (s, r=document)=>r.querySelector(s);
-    const vidIntro   = $('#vidIntro');
-    const vidLoop    = $('#vidLoop');
-    const gate       = $('#gate');
-    const bubbleText = $('#bubbleText');
-    const input      = $('#userInput');
-    const form       = $('#composer');
+    const vidIntro = $('#vidIntro'), vidLoop = $('#vidLoop'), gate = $('#gate');
+    const bubbleText = $('#bubbleText'), input = $('#userInput'), form = $('#composer');
 
     // 自动播放（失败则显示门禁）
-    async function startPlayback(){
-      try{ await vidIntro.play(); gate.hidden = true; }
-      catch{ gate.hidden = false; }
-    }
+    async function startPlayback(){ try{ await vidIntro.play(); gate.hidden = true; } catch{ gate.hidden = false; } }
     function swapToLoop(){ vidIntro.hidden = true; vidLoop.hidden = false; vidLoop.currentTime = 0; vidLoop.play().catch(()=>{}); }
 
     // 文案自动缩放：长句不出框，短句更大
-    function fitText(el, {min=14, max=30}={}){
+    function fitText(el, {min=14, max=30}={}) {
       const box = el.parentElement; let size = max; el.style.fontSize = size + 'px';
-      while (size > min && el.scrollHeight > box.clientHeight){ size -= 1; el.style.fontSize = size + 'px'; }
+      while (size > min && el.scrollHeight > box.clientHeight) { size -= 1; el.style.fontSize = size + 'px'; }
     }
 
-    // 读取 PNG 实际比例，自动设置 --bubble-aspect / --composer-aspect
+    // 读取 PNG 实际比例，自动设置 --bubble-aspect / --composer-aspect（保证不变形）
     function autoAspect(varName, src){
       const img = new Image();
-      img.onload = () => { if (img.naturalWidth && img.naturalHeight){ document.documentElement.style.setProperty(varName, (img.naturalWidth / img.naturalHeight)); } };
-      img.src = src;
+      img.onload = () => { if (img.naturalWidth && img.naturalHeight)
+        document.documentElement.style.setProperty(varName, img.naturalWidth / img.naturalHeight); };
+      img.src = src + '?v=' + Date.now(); // 防缓存
     }
 
     (function init(){
-      // 视频切换 & 门禁
       vidIntro.addEventListener('error', swapToLoop);
       vidIntro.addEventListener('ended', swapToLoop);
       if (document.visibilityState === 'visible') startPlayback();
       document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'visible' && gate.hidden === false) startPlayback(); });
-      gate.addEventListener('click', startPlayback, { passive: true });
+      gate.addEventListener('click', startPlayback, { passive:true });
 
-      // 初始自适应
       fitText(bubbleText, {min:14, max:30});
       autoAspect('--bubble-aspect',  'cat_bubble.png');
       autoAspect('--composer-aspect','input_box.png');
 
-      // 极简“单气泡轮流”占位回复（后续替换为 API）
       form.addEventListener('submit', (e)=>{
         e.preventDefault();
         const text = (input.value || '').trim();
