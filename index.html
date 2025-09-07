@@ -17,30 +17,29 @@
 
     .overlay { position:absolute; inset:0; pointer-events:none; }
 
-    /* —— 气泡（只用你的 PNG，带尾巴，不裁剪） —— */
+    /* —— 气泡（使用你的 PNG，带尾巴，不裁剪） —— */
     .bubble{
-      --bubble-width: 98%;      /* 基准更大 */
+      --bubble-width: 98%;
       --bubble-aspect: 1.70;    /* 会被 PNG 实际比例覆盖 */
       --bubble-top: 5.5%;
       position:absolute;
       top: calc(var(--bubble-top) + env(safe-area-inset-top,0px));
       left:50%;
-      width: min(var(--bubble-width), 880px);                 /* 桌面最大 880px */
+      width: min(var(--bubble-width), 880px);
       height: calc(min(var(--bubble-width), 880px) / var(--bubble-aspect));
       transform: translateX(-50%);
       background: url("cat_bubble.png") center/contain no-repeat;
-      overflow: visible;     /* 允许尾巴超出 */
+      overflow: visible;
       border-radius: 0;
       filter: drop-shadow(0 6px 12px rgba(0,0,0,.14));
     }
     .bubble__text{
-      /* 扩大文本安全区，让文字不用太挤 */
       --padX: 7%;
       --padTop: 8%;
       --padBottom: 10%;
       position:absolute; left:var(--padX); right:var(--padX); top:var(--padTop); bottom:var(--padBottom);
       text-align:center; color:#0f172a;
-      font-size:20px;          /* 默认更小 */
+      font-size:20px;
       line-height:1.30; letter-spacing:.2px;
       word-break:break-word; hyphens:auto; overflow:hidden;
     }
@@ -77,13 +76,13 @@
     /* —— 手机竖屏：气泡略缩小，避免挡猫 —— */
     @media (max-width: 480px){
       .bubble{
-        --bubble-width: 92%;     /* 从 84% → 92%：你说“太小”，这里放大 */
+        --bubble-width: 92%;
         --bubble-top: 5%;
         width: var(--bubble-width);
         height: calc(var(--bubble-width) / var(--bubble-aspect));
       }
       .bubble__text{
-        font-size: 19px;         /* 手机默认再小一点点 */
+        font-size: 19px;
         --padX: 8%; --padTop: 9%; --padBottom: 11%;
       }
       .composer{ --composer-bottom: 2.2%; }
@@ -117,27 +116,38 @@
   </div>
 
   <script>
+    /* =============== 背景视频：先播 intro，再切 loop =============== */
     const vidIntro = document.getElementById('vidIntro');
     const vidLoop  = document.getElementById('vidLoop');
     const gate     = document.getElementById('gate');
+
+    async function startPlayback(){
+      try{ await vidIntro.play(); gate.hidden = true; }
+      catch{ gate.hidden = false; }
+    }
+    function swapToLoop(){
+      vidIntro.hidden = true;
+      vidLoop.hidden = false;
+      vidLoop.currentTime = 0;
+      vidLoop.play().catch(()=>{});
+    }
+    vidIntro.addEventListener('error', swapToLoop);
+    vidIntro.addEventListener('ended', swapToLoop);
+    if (document.visibilityState === 'visible') startPlayback();
+    document.addEventListener('visibilitychange', ()=>{
+      if (document.visibilityState === 'visible' && !gate.hidden) startPlayback();
+    });
+    gate.addEventListener('click', startPlayback, { passive:true });
+
+    /* =============== 文案自适应 & PNG 实际比例 =============== */
     const bubbleText = document.getElementById('bubbleText');
-    const input    = document.getElementById('userInput');
-    const form     = document.getElementById('composer');
-
-    async function startPlayback(){ try{ await vidIntro.play(); gate.hidden = true; } catch{ gate.hidden = false; } }
-    function swapToLoop(){ vidIntro.hidden = true; vidLoop.hidden = false; vidLoop.currentTime = 0; vidLoop.play().catch(()=>{}); }
-
-    // 文案自动缩放：把上限降到 24，整体更小
-    function fitText(el, {min=14, max=24}={}) {
+    function fitText(el, {min=14, max=24}={}){
       const box = el.parentElement;
-      let size = max;
-      el.style.fontSize = size + 'px';
+      let size = max; el.style.fontSize = size + 'px';
       while (size > min && el.scrollHeight > box.clientHeight) {
         size -= 1; el.style.fontSize = size + 'px';
       }
     }
-
-    // 读取 PNG 实际比例，避免被拉伸
     function autoAspect(varName, src){
       const img = new Image();
       img.onload = () => {
@@ -147,36 +157,79 @@
       };
       img.src = src + '?v=' + Date.now(); // 防缓存
     }
+    fitText(bubbleText, {min:14, max:24});
+    autoAspect('--bubble-aspect','cat_bubble.png');
+    autoAspect('--composer-aspect','input_box.png');
 
-    (function init(){
-      vidIntro.addEventListener('error', swapToLoop);
-      vidIntro.addEventListener('ended', swapToLoop);
-      if (document.visibilityState === 'visible') startPlayback();
-      document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'visible' && !gate.hidden) startPlayback(); });
-      gate.addEventListener('click', startPlayback, { passive:true });
+    /* =============== 聊天逻辑（调用你的 Worker /chat） =============== */
+    const WORKER_URL = "https://falling-bar-4d1a.cheryleliu2025.workers.dev/chat";  // 你的 Worker 接口
+    const input  = document.getElementById('userInput');
+    const form   = document.getElementById('composer');
 
+    // 简单历史，用于给模型一点上下文
+    const historyMsgs = [
+      { role: "system", content: "You are Musepiece Cat. 风格：温柔、简洁、带一点哲思；避免长篇大论；像温柔的朋友陪伴用户。" },
+      { role: "assistant", content: "Mew~ Been waiting for you." }
+    ];
+
+    // 金句触发（MVP：关键词命中即视为金句，可后续替换更智能逻辑）
+    function maybeQuote(text){
+      const trigger = ["当下","温柔","breathe","slow down","not a puzzle","it is not a puzzle"];
+      return trigger.some(k => text.toLowerCase().includes(k) || text.includes(k));
+    }
+
+    async function askCat(userText){
+      // 用户说话 → 先把用户文本显示在气泡里
+      bubbleText.textContent = userText;
       fitText(bubbleText, {min:14, max:24});
-      autoAspect('--bubble-aspect','cat_bubble.png');
-      autoAspect('--composer-aspect','input_box.png');
 
-      form.addEventListener('submit', (e)=>{
-        e.preventDefault();
-        const text = (input.value || '').trim();
-        if (!text) return;
-        bubbleText.textContent = text;
+      // 猫咪“思考中”
+      const thinking = "…";
+      setTimeout(()=>{ bubbleText.textContent = thinking; fitText(bubbleText, {min:14, max:24}); }, 80);
+
+      // 组包并请求上游（通过 Worker）
+      const payload = {
+        model: "openrouter/auto",  // 先用 auto，后续可改具体模型
+        messages: [...historyMsgs, { role:"user", content:userText }]
+      };
+
+      try{
+        const res = await fetch(WORKER_URL, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        if(!res.ok) throw new Error("Upstream " + res.status);
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content || "（没听清，再说一次？）";
+
+        // 更新气泡为模型回复
+        bubbleText.textContent = reply;
         fitText(bubbleText, {min:14, max:24});
-        input.value = '';
-        setTimeout(()=>{
-          const replies = [
-            'Got it. I’m here. Want to tell me a bit more?',
-            'I’m listening. What feeling is strongest right now?',
-            'Let’s breathe together for 3 seconds… and then keep going.'
-          ];
-          bubbleText.textContent = replies[Math.floor(Math.random()*replies.length)];
-          fitText(bubbleText, {min:14, max:24});
-        }, 900);
-      });
-    })();
+
+        // 记录历史，便于下一轮
+        historyMsgs.push({ role:"user", content:userText }, { role:"assistant", content:reply });
+
+        // 命中关键词时，可在此触发你的“金句卡片”（此处先只展示在气泡里，不额外创建DOM）
+        if (maybeQuote(reply)) {
+          // 这里预留：后续可在气泡下方插入一个卡片 DOM
+          // 例如：createQuoteCard(reply);
+        }
+
+      }catch(err){
+        bubbleText.textContent = "网络有点慢，稍后再试一下喵～";
+        fitText(bubbleText, {min:14, max:24});
+        console.error(err);
+      }
+    }
+
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const text = (input.value || '').trim();
+      if(!text) return;
+      input.value = '';
+      askCat(text);
+    });
   </script>
 </body>
 </html>
