@@ -93,7 +93,8 @@
   <div class="page">
     <main class="stage">
       <div class="video-layer">
-        <video id="vidIntro" playsinline muted preload="auto">
+        <!-- 加 autoplay，提高首屏成功率 -->
+        <video id="vidIntro" playsinline muted preload="auto" autoplay>
           <source src="cat-yawn-blink.mp4" type="video/mp4"/>
         </video>
         <video id="vidLoop" playsinline muted preload="auto" loop hidden>
@@ -116,28 +117,63 @@
   </div>
 
   <script>
-    /* =============== 背景视频：先播 intro，再切 loop =============== */
+    /* =============== 背景视频：先播 intro，再切 loop（多重兜底） =============== */
     const vidIntro = document.getElementById('vidIntro');
     const vidLoop  = document.getElementById('vidLoop');
     const gate     = document.getElementById('gate');
 
-    async function startPlayback(){
-      try{ await vidIntro.play(); gate.hidden = true; }
-      catch{ gate.hidden = false; }
-    }
+    let introTriedAutoplay = false;
+
     function swapToLoop(){
       vidIntro.hidden = true;
       vidLoop.hidden = false;
       vidLoop.currentTime = 0;
       vidLoop.play().catch(()=>{});
+      gate.hidden = true; // 放行
     }
-    vidIntro.addEventListener('error', swapToLoop);
-    vidIntro.addEventListener('ended', swapToLoop);
-    if (document.visibilityState === 'visible') startPlayback();
-    document.addEventListener('visibilitychange', ()=>{
-      if (document.visibilityState === 'visible' && !gate.hidden) startPlayback();
+
+    async function tryPlayIntro(){
+      try {
+        await vidIntro.play();
+        gate.hidden = true;
+        introTriedAutoplay = true;
+      } catch (e) {
+        // 自动播放失败：显示 gate，等待用户点击
+        gate.hidden = false;
+      }
+    }
+
+    // 首次进入：尝试自动播放；失败则显示 gate
+    document.addEventListener('DOMContentLoaded', () => {
+      tryPlayIntro();
+
+      // 兜底：5 秒内 intro 仍未开始播放 → 切 loop
+      setTimeout(() => {
+        const notPlaying = vidIntro.currentTime === 0 || vidIntro.paused;
+        if (!vidIntro.hidden && notPlaying) swapToLoop();
+      }, 5000);
     });
-    gate.addEventListener('click', startPlayback, { passive:true });
+
+    // 用户点击 gate：再试一次 intro；仍失败就切 loop
+    gate.addEventListener('click', async () => {
+      try {
+        await vidIntro.play();
+        gate.hidden = true;
+      } catch {
+        swapToLoop();
+      }
+    }, { passive:true });
+
+    // 如果 intro 能播放到头，正常切换到 loop
+    vidIntro.addEventListener('ended', swapToLoop);
+    // 如果 intro 报错（资源丢失/路径错误），直接切 loop
+    vidIntro.addEventListener('error', swapToLoop);
+    // 如果加载好但没自动播，尽量再尝试一次
+    vidIntro.addEventListener('canplay', () => {
+      if (!introTriedAutoplay && gate.hidden) {
+        tryPlayIntro();
+      }
+    });
 
     /* =============== 文案自适应 & PNG 实际比例 =============== */
     const bubbleText = document.getElementById('bubbleText');
@@ -162,47 +198,42 @@
     autoAspect('--composer-aspect','input_box.png');
 
     /* =============== 聊天逻辑（调用你的 Worker /chat） =============== */
-    const WORKER_URL = "https://falling-bar-4d1a.cheryleliu2025.workers.dev/chat";  // 你的 Worker 接口
+    const WORKER_URL = "https://falling-bar-4d1a.cheryleliu2025.workers.dev/chat";
     const input  = document.getElementById('userInput');
     const form   = document.getElementById('composer');
 
     // 语言检测（是否含有中文字符）
     const hasChinese = (s) => /[\u4e00-\u9fff]/.test(s);
 
-    // 构建每轮对话的 system 提示，默认英文；若用户输入含中文则改为中文
+    // 每轮对话的 system 提示：默认英文；若用户输入含中文则改为中文
     function buildSystemPrompt(userText){
       const baseStyleEn = "You are MusePiece Cat. Tone: warm, concise, slightly philosophical. Keep replies short (1–3 sentences). Avoid long paragraphs.";
       const baseStyleZh = "你是 MusePiece 的猫。语气温柔、简洁、带一点哲思；回复尽量短（1–3 句），避免长段落。";
-
       return hasChinese(userText)
         ? "Reply ONLY in Simplified Chinese. " + baseStyleZh
         : "Reply ONLY in natural English. " + baseStyleEn;
     }
 
-    // 初始欢迎词（不放进系统上下文，避免语言被锁死）
     const seedAssistant = "Mew~ Been waiting for you.";
 
     async function askCat(userText){
-      // 用户说话 → 先把用户文本显示在气泡里
+      // 先显示用户文本
       bubbleText.textContent = userText;
       fitText(bubbleText, {min:14, max:24});
 
-      // 猫咪“思考中”
+      // 思考中
       const thinking = "…";
       setTimeout(()=>{ bubbleText.textContent = thinking; fitText(bubbleText, {min:14, max:24}); }, 80);
 
-      // 本轮消息（带语言锁定的 system）
       const messages = [
         { role: "system", content: buildSystemPrompt(userText) },
         { role: "assistant", content: seedAssistant },
         { role: "user", content: userText }
       ];
 
-      // 你后端会先走 DeepSeek，限流/失败再 fallback 到 4o-mini；这里维持 auto 即可
       const payload = {
         model: "openrouter/auto",
         messages,
-        // 可选：限制长度，降低跑偏
         max_tokens: 220,
         temperature: 0.8
       };
@@ -212,7 +243,6 @@
           method:"POST",
           headers:{
             "Content-Type":"application/json",
-            // 额外暗示：有些路由器会参考此 header（不保证生效，但无害）
             "Accept-Language": hasChinese(userText) ? "zh-CN,zh;q=0.9" : "en-US,en;q=0.9"
           },
           body: JSON.stringify(payload)
@@ -221,13 +251,11 @@
         const data = await res.json();
         const reply = data?.choices?.[0]?.message?.content || (hasChinese(userText) ? "没听清，再说一次？" : "I didn’t catch that—could you say it again?");
 
-        // 更新气泡为模型回复
         bubbleText.textContent = reply;
         fitText(bubbleText, {min:14, max:24});
 
-        // —— 关键词“金句”触发（可保留你的后续扩展）——
         if (maybeQuote(reply)) {
-          // createQuoteCard(reply); // 预留
+          // 预留：createQuoteCard(reply);
         }
 
       }catch(err){
@@ -238,14 +266,13 @@
       }
     }
 
-    // 关键词命中即视为“金句”
     function maybeQuote(text){
       const trigger = ["当下","温柔","呼吸","breathe","slow down","not a puzzle","it is not a puzzle"];
       const lower = text.toLowerCase();
       return trigger.some(k => lower.includes(k) || text.includes(k));
     }
 
-    document.getElementById('composer').addEventListener('submit', (e)=>{
+    form.addEventListener('submit', (e)=>{
       e.preventDefault();
       const text = (input.value || '').trim();
       if(!text) return;
