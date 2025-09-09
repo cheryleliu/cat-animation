@@ -21,7 +21,7 @@
     /* —— Speech bubble —— */
     .bubble{
       --bubble-width: 98%;
-      --bubble-aspect: 1.70;    /* Will be updated by PNG real ratio */
+      --bubble-aspect: 1.70;
       --bubble-top: 5.5%;
       position:absolute;
       top: calc(var(--bubble-top) + env(safe-area-inset-top,0px));
@@ -31,9 +31,7 @@
       transform: translateX(-50%);
       background: url("cat_bubble.png") center/contain no-repeat;
       overflow: visible;
-      border-radius: 0;
       filter: drop-shadow(0 6px 12px rgba(0,0,0,.14));
-      pointer-events:none;
     }
     .bubble__text{
       --padX: 7%;
@@ -41,14 +39,24 @@
       --padBottom: 10%;
       position:absolute; left:var(--padX); right:var(--padX); top:var(--padTop); bottom:var(--padBottom);
       text-align:center; color:#0f172a;
-      font-size:20px; line-height:1.30; letter-spacing:.2px;
-      word-break:break-word; hyphens:auto; overflow:hidden;
+      font-size:20px; line-height:1.30;
+      word-break:break-word; overflow:hidden;
+      opacity:1; transition:opacity .6s ease;
+    }
+    /* 呼吸动画 */
+    .breathing {
+      animation: breathe 1.6s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0% { opacity:0.6; }
+      50%{ opacity:1; }
+      100%{ opacity:0.6; }
     }
 
     /* —— Composer —— */
     .composer{
       --composer-width: 92%;
-      --composer-aspect: 7.5;  /* Will be updated by PNG real ratio */
+      --composer-aspect: 7.5;
       --composer-bottom: 3%;
       position:absolute; left:50%;
       bottom: calc(var(--composer-bottom) + env(safe-area-inset-bottom,0px));
@@ -59,24 +67,14 @@
       display:grid; grid-template-columns:1fr auto; align-items:center; padding:0 14px; gap:10px;
       pointer-events:auto; z-index:10;
     }
-    .composer input[type="text"]{
-      width:100%; border:none; outline:none; background:transparent;
-      font-size:18px; line-height:1.2; color:#fff !important; caret-color:#fff !important;
-      text-shadow:0 0 1px rgba(0,0,0,.25);
+    .composer input{ width:100%; border:none; outline:none; background:transparent;
+      font-size:18px; line-height:1.2; color:#fff; caret-color:#fff;
     }
-    .composer input::placeholder{ color:rgba(255,255,255,.88) !important; }
-    .composer input:focus::placeholder{ opacity:.55; }
     .btn{ border:none; border-radius:14px; padding:10px 14px; font-size:16px; background:#111827; color:#fff; cursor:pointer; }
+    .btn[disabled]{ opacity:.6; cursor:not-allowed; }
 
     .gate{ position:absolute; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.5); color:#fff; pointer-events:auto; }
     .gate[hidden]{ display:none; }
-
-    /* Mobile tweaks */
-    @media (max-width: 480px){
-      .bubble{ --bubble-width: 92%; --bubble-top: 5%; }
-      .bubble__text{ font-size: 19px; --padX: 8%; --padTop: 9%; --padBottom: 11%; }
-      .composer{ --composer-bottom: 2.2%; }
-    }
   </style>
 </head>
 <body>
@@ -96,7 +94,7 @@
 
         <form class="composer" id="composer" autocomplete="off">
           <input id="userInput" type="text" placeholder="Tell me how you feel…" maxlength="280"/>
-          <button class="btn" type="submit">Send</button>
+          <button class="btn" type="submit" id="sendBtn">Send</button>
         </form>
 
         <div class="gate" id="gate"><div>Tap to enter 🐾</div></div>
@@ -105,143 +103,62 @@
   </div>
 
   <script>
-    /* ================= Video flow (intro -> loop) with no black frame ================= */
-    const vidIntro = document.getElementById('vidIntro');
-    const vidLoop  = document.getElementById('vidLoop');
-    const gate     = document.getElementById('gate');
+    const vidIntro=document.getElementById('vidIntro'),vidLoop=document.getElementById('vidLoop'),gate=document.getElementById('gate');
+    let introPlaying=false,loopStarted=false;
+    function startLoopOnce(){if(loopStarted)return;loopStarted=true;vidLoop.hidden=false;vidLoop.addEventListener('playing',()=>{vidIntro.hidden=true;gate.hidden=true;},{once:true});vidLoop.play().catch(()=>{});}
+    function swapToLoopSafe(){startLoopOnce();}
+    async function tryPlayIntro(){try{await vidIntro.play();introPlaying=true;gate.hidden=true;}catch{gate.hidden=false;}}
+    document.addEventListener('DOMContentLoaded',()=>{tryPlayIntro();setTimeout(()=>{if(!introPlaying)swapToLoopSafe();},5000);});
+    gate.addEventListener('click',async()=>{try{await vidIntro.play();introPlaying=true;gate.hidden=true;}catch{swapToLoopSafe();}},{passive:true});
+    vidIntro.addEventListener('ended',swapToLoopSafe);vidIntro.addEventListener('error',swapToLoopSafe);
 
-    let introPlaying = false;   // whether intro really started
-    let loopStarted  = false;   // prevent duplicate switching
-
-    // Only hide intro after loop is actually playing (first frame rendered)
-    function startLoopOnce() {
-      if (loopStarted) return;
-      loopStarted = true;
-
-      vidLoop.hidden = false;
-      const onLoopPlaying = () => {
-        vidIntro.hidden = true;   // safe to hide: loop frames are visible
-        gate.hidden = true;
-        vidLoop.removeEventListener('playing', onLoopPlaying);
-      };
-      vidLoop.addEventListener('playing', onLoopPlaying, { once: true });
-
-      vidLoop.play().catch(()=>{ /* some browsers still need user gesture; harmless */ });
-    }
-
-    function swapToLoopSafe() {
-      startLoopOnce();
-    }
-
-    async function tryPlayIntro(){
-      try {
-        await vidIntro.play();
-        introPlaying = true;
-        gate.hidden = true;
-      } catch {
-        // autoplay failed: wait for user tap
-        gate.hidden = false;
-      }
-    }
-
-    // Warm up loop to reduce first-frame latency
-    function warmLoop(){ try { vidLoop.load(); } catch {} }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      warmLoop();
-      tryPlayIntro();
-
-      // Fallback: if intro still not actually playing after 5s, switch to loop
-      setTimeout(() => {
-        if (!introPlaying) swapToLoopSafe();
-      }, 5000);
-    });
-
-    gate.addEventListener('click', async () => {
-      try {
-        await vidIntro.play();
-        introPlaying = true;
-        gate.hidden = true;
-      } catch {
-        swapToLoopSafe();
-      }
-    }, { passive:true });
-
-    // Normal end or error -> switch to loop (safe)
-    vidIntro.addEventListener('ended', swapToLoopSafe);
-    vidIntro.addEventListener('error', swapToLoopSafe);
-
-    /* ================= Bubble text fit & PNG ratio ================= */
-    const bubbleText = document.getElementById('bubbleText');
-    function fitText(el, {min=14, max=24}={}){
-      const box = el.parentElement;
-      let size = max; el.style.fontSize = size + 'px';
-      while (size > min && el.scrollHeight > box.clientHeight) { size -= 1; el.style.fontSize = size + 'px'; }
-    }
-    function autoAspect(varName, src){
-      const img = new Image();
-      img.onload = () => {
-        if (img.naturalWidth && img.naturalHeight) {
-          document.documentElement.style.setProperty(varName, img.naturalWidth / img.naturalHeight);
-        }
-      };
-      img.src = src + '?v=' + Date.now();
-    }
-    fitText(bubbleText, {min:14, max:24});
-    autoAspect('--bubble-aspect','cat_bubble.png');
-    autoAspect('--composer-aspect','input_box.png');
-
-    /* ================= Chat to Worker (FORCE ENGLISH) ================= */
-    const WORKER_BASE = "https://falling-bar-4d1a.cheryleliu2025.workers.dev"; // your Worker
-    const WORKER_URL  = WORKER_BASE + "/chat";
-    const input  = document.getElementById('userInput');
-    const form   = document.getElementById('composer');
-
-    const seedAssistant = "Mew~ Been waiting for you.";
-
-    function buildSystemPrompt(){
-      // Hard-force English to avoid CN output; keep it short & cat-like
-      return "You are MusePiece Cat. Tone: warm, concise, slightly philosophical. Keep replies short (1–3 sentences). Avoid long paragraphs. Reply ONLY in natural English.";
-    }
+    /* Bubble & chat */
+    const bubbleText=document.getElementById('bubbleText');
+    const input=document.getElementById('userInput');const form=document.getElementById('composer');const sendBtn=document.getElementById('sendBtn');
+    const WORKER_URL="https://falling-bar-4d1a.cheryleliu2025.workers.dev/chat";
+    const seedAssistant="Mew~ Been waiting for you.";
+    function buildSystemPrompt(){return "You are MusePiece Cat. Tone: warm, concise, slightly philosophical. Keep replies short (1–3 sentences). Reply ONLY in English.";}
 
     async function askCat(userText){
-      // show user's text briefly, then a tiny thinking state
-      bubbleText.textContent = userText; fitText(bubbleText, {min:14, max:24});
-      setTimeout(()=>{ bubbleText.textContent = "…"; fitText(bubbleText, {min:14, max:24}); }, 80);
+      // 显示用户输入 + 呼吸效果
+      bubbleText.textContent=userText;
+      bubbleText.classList.add("breathing");
 
-      const messages = [
-        { role: "system", content: buildSystemPrompt() },
-        { role: "assistant", content: seedAssistant },
-        { role: "user", content: userText }
+      const messages=[
+        {role:"system",content:buildSystemPrompt()},
+        {role:"assistant",content:seedAssistant},
+        {role:"user",content:userText}
       ];
-
-      const payload = { model: "openrouter/auto", messages, max_tokens: 220, temperature: 0.8 };
+      const payload={model:"openrouter/auto",messages,max_tokens:220,temperature:0.8};
 
       try{
-        const res = await fetch(WORKER_URL, {
-          method:"POST",
-          credentials:"include",
-          headers:{
-            "Content-Type":"application/json",
-            "Accept-Language": "en-US,en;q=0.9"  // force English
-          },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        const reply = data?.choices?.[0]?.message?.content || "Could you say that again?";
-        bubbleText.textContent = reply; fitText(bubbleText, {min:14, max:24});
+        sendBtn.disabled=true;
+        const res=await fetch(WORKER_URL,{method:"POST",credentials:"include",
+          headers:{"Content-Type":"application/json","Accept-Language":"en-US,en;q=0.9"},
+          body:JSON.stringify(payload)});
+        const data=await res.json();
+        const reply=data?.choices?.[0]?.message?.content||"Could you say that again?";
+
+        // 停止呼吸动画，淡出用户输入
+        bubbleText.classList.remove("breathing");
+        bubbleText.style.opacity=0;
+        setTimeout(()=>{
+          bubbleText.textContent=reply;
+          bubbleText.style.opacity=1;
+        },600);
       }catch(err){
-        bubbleText.textContent = "Network is a bit slow. Try again in a moment, mew~";
-        fitText(bubbleText, {min:14, max:24});
+        bubbleText.textContent="Network is a bit slow. Try again in a moment, mew~";
         console.error(err);
+      }finally{
+        sendBtn.disabled=false;
+        input.focus();
       }
     }
 
-    form.addEventListener('submit', (e)=>{
+    form.addEventListener('submit',e=>{
       e.preventDefault();
-      const text = (input.value || '').trim();
-      if(!text) return;
-      input.value = '';
+      const text=input.value.trim();
+      if(!text||sendBtn.disabled)return;
       askCat(text);
     });
   </script>
