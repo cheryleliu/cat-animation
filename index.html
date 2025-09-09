@@ -71,41 +71,6 @@
     .gate{ position:absolute; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.5); color:#fff; pointer-events:auto; }
     .gate[hidden]{ display:none; }
 
-    /* —— Quote Card (preview below the stage) —— */
-    .quote-wrap{ width: min(100vw, 56.25vh); margin: 18px auto 0; }
-    .quote-card{
-      position:relative; width:100%; aspect-ratio:9/16;
-      margin:0 auto; border-radius:14px; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,.45);
-      background:#000;
-    }
-    .quote-bg{ width:100%; height:100%; object-fit:cover; display:block }
-
-    /* Safe area to match your translucent box; tweak % with your UI later if needed */
-    #quote-box{
-      --box-top: 9%;
-      --box-left: 8%;
-      --box-right: 8%;
-      --box-height: 18%;
-      position:absolute; z-index:2;
-      top:var(--box-top);
-      left:var(--box-left);
-      width:calc(100% - var(--box-left) - var(--box-right));
-      height:var(--box-height);
-      display:flex; align-items:center; justify-content:center;
-      padding:0 2%; text-align:center; overflow:hidden;
-    }
-    #quote-text{
-      color:#fefefe; font-family:"Georgia","Times New Roman",serif;
-      font-weight:600; line-height:1.35;
-      word-break:break-word; white-space:pre-wrap;
-      text-shadow:0 2px 4px rgba(0,0,0,.6);
-      font-size:clamp(20px,2.8vw,42px); padding:0 .2em;
-    }
-
-    .toolbar{ display:flex; gap:10px; justify-content:center; margin:10px 0 0; }
-    .toolbar button{ border:1px solid #2a2a2e; background:#131318; color:#e9e9ee; padding:10px 14px; border-radius:12px; cursor:pointer; font-size:14px }
-    .toolbar button:hover{ border-color:#3a3a40 }
-
     /* Mobile tweaks */
     @media (max-width: 480px){
       .bubble{ --bubble-width: 92%; --bubble-top: 5%; }
@@ -137,22 +102,8 @@
         <div class="gate" id="gate"><div>Tap to enter 🐾</div></div>
       </div>
     </main>
-
-    <!-- Quote Card Preview -->
-    <section class="quote-wrap">
-      <div class="quote-card" id="quote-card">
-        <img src="quote-card-cat-v1.jpg" alt="MusePiece Quote Card" class="quote-bg"/>
-        <div id="quote-box"><div id="quote-text"></div></div>
-      </div>
-      <div class="toolbar">
-        <button id="btn-quote">Generate Quote</button>
-        <button id="btn-save">Save 1080×1920</button>
-      </div>
-    </section>
   </div>
 
-  <!-- html2canvas for export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script>
     /* ================= Video flow (intro -> loop) ================= */
     const vidIntro = document.getElementById('vidIntro');
@@ -227,20 +178,16 @@
       try{
         const res = await fetch(WORKER_URL, {
           method:"POST",
-          credentials:"include",                            // <- keep cookies for quote frequency
+          credentials:"include",
           headers:{
             "Content-Type":"application/json",
-            "Accept-Language": "en-US,en;q=0.9"            // <- force English
+            "Accept-Language": "en-US,en;q=0.9"  // <- hard force English
           },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
         const reply = data?.choices?.[0]?.message?.content || "Could you say that again?";
         bubbleText.textContent = reply; fitText(bubbleText, {min:14, max:24});
-
-        // If Worker attached a quote_block, render the card + copy short link
-        if (data?.quote_block) applyQuoteBlock(data.quote_block);
-
       }catch(err){
         bubbleText.textContent = "Network is a bit slow. Try again in a moment, mew~";
         fitText(bubbleText, {min:14, max:24});
@@ -255,72 +202,6 @@
       input.value = '';
       askCat(text);
     });
-
-    /* ================= Quote Card (render + save) ================= */
-    const $ = s => document.querySelector(s);
-    const quoteTextEl = $('#quote-text');
-    const quoteBoxEl  = $('#quote-box');
-
-    function applyQuoteBlock(quoteBlock){
-      if (!quoteBlock?.quote_card) return;
-      quoteTextEl.textContent = quoteBlock.quote;
-      autoFitToBox(quoteTextEl, quoteBoxEl);
-      // Copy short link and nudge to share
-      navigator.clipboard.writeText(quoteBlock.share_url || "https://tinyurl.com/musecard");
-      toast("Card ready. Short link copied — share it in your IG Story 🐾");
-    }
-
-    function autoFitToBox(textEl, boxEl){
-      const maxSize = 44, minSize = 16;
-      let size = Math.min(maxSize, parseFloat(getComputedStyle(textEl).fontSize) || 32);
-      textEl.style.fontSize = size + 'px';
-      for(let i=0;i<50;i++){
-        if (textEl.scrollHeight <= boxEl.clientHeight && textEl.scrollWidth <= boxEl.clientWidth) break;
-        size -= 1;
-        if (size <= minSize){ textEl.style.fontSize = minSize+'px'; break; }
-        textEl.style.fontSize = size + 'px';
-      }
-    }
-
-    document.getElementById('btn-quote').addEventListener('click', async () => {
-      try{
-        const res = await fetch(WORKER_BASE + "/quote", {
-          method:'GET', credentials:'include',
-          headers:{ "Accept-Language": "en-US,en;q=0.9" } // <- force English
-        });
-        const data = await res.json();
-        if (data?.quote_card) applyQuoteBlock(data);
-      }catch(e){ toast("Hmm… quote took a little nap. Try again."); console.error(e); }
-    });
-
-    document.getElementById('btn-save').addEventListener('click', saveQuoteCard);
-    async function saveQuoteCard(){
-      const card = document.getElementById('quote-card');
-      const canvas = await html2canvas(card, { backgroundColor:null, scale: 2 });
-      const W=1080, H=1920;
-      const out = document.createElement('canvas'); out.width=W; out.height=H;
-      const ctx = out.getContext('2d'); ctx.drawImage(canvas, 0, 0, W, H);
-
-      const a = document.createElement('a');
-      a.download = 'MusePiece-Quote.png';
-      a.href = out.toDataURL('image/png');
-      a.click();
-
-      toast("Mew~ Card saved. Paste the link in your Story 🐾");
-    }
-
-    function toast(msg){
-      const t = document.createElement('div');
-      t.textContent = msg;
-      Object.assign(t.style,{
-        position:'fixed',left:'50%',bottom:'24px',transform:'translateX(-50%)',
-        background:'rgba(20,20,24,.92)',color:'#fff',padding:'10px 14px',
-        borderRadius:'12px',fontSize:'14px',zIndex:9999
-      });
-      document.body.appendChild(t);
-      setTimeout(()=>t.remove(),2200);
-    }
   </script>
 </body>
 </html>
-
