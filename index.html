@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-version="v-breath-5">
+<html lang="en" data-version="v-clean-1">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate" />
@@ -8,72 +8,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>MusePiece · Cat Demo</title>
   <style>
-    * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; background:#0b0b0b;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:#e9e9ee; }
-    .page { min-height: 100dvh; width: 100vw; display: grid; place-items: center; padding: 16px 0 64px; }
-    .stage { position: relative; aspect-ratio: 9/16; width: min(100vw, 56.25vh); background:#000; overflow:hidden; border-radius:16px; }
-
-    :root { --video-scale:1.03; --video-pos-x:50%; --video-pos-y:52%; }
-    .video-layer { position:absolute; inset:0; overflow:hidden; }
-    video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:var(--video-pos-x) var(--video-pos-y); transform:scale(var(--video-scale)); }
-
-    .overlay { position:absolute; inset:0; pointer-events:none; }
-
-    .bubble{
-      --bubble-width: 98%;
-      --bubble-aspect: 1.70;
-      --bubble-top: 5.5%;
-      position:absolute;
-      top: calc(var(--bubble-top) + env(safe-area-inset-top,0px));
-      left:50%;
-      width: min(var(--bubble-width), 880px);
-      height: calc(min(var(--bubble-width), 880px) / var(--bubble-aspect));
-      transform: translateX(-50%);
-      background: url("cat_bubble.png") center/contain no-repeat;
-      filter: drop-shadow(0 6px 12px rgba(0,0,0,.14));
-    }
-    .bubble__text{
-      --padX: 7%; --padTop: 8%; --padBottom: 10%;
-      position:absolute; left:var(--padX); right:var(--padX); top:var(--padTop); bottom:var(--padBottom);
-      text-align:center; color:#0f172a;
-      font-size:20px; line-height:1.30; letter-spacing:.2px;
-      word-break:break-word; overflow:hidden;
-      opacity:1; transition:opacity .45s ease; will-change: opacity;
-    }
-    .breathing { animation: breathe 1.6s ease-in-out infinite; }
-    @keyframes breathe { 0% { opacity:.6; } 50% { opacity:1; } 100% { opacity:.6; } }
-
-    .composer{
-      --composer-width: 92%;
-      --composer-aspect: 7.5;
-      --composer-bottom: 3%;
-      position:absolute; left:50%;
-      bottom: calc(var(--composer-bottom) + env(safe-area-inset-bottom,0px));
-      width: var(--composer-width);
-      height: calc(var(--composer-width) / var(--composer-aspect));
-      transform: translateX(-50%);
-      background: url("input_box.png") center/100% 100% no-repeat;
-      display:grid; grid-template-columns:1fr auto; align-items:center; padding:0 14px; gap:10px;
-      pointer-events:auto; z-index:10;
-    }
-    .composer input[type="text"]{
-      width:100%; border:none; outline:none; background:transparent;
-      font-size:18px; line-height:1.2; color:#fff; caret-color:#fff;
-      text-shadow:0 0 1px rgba(0,0,0,.25);
-    }
-    .composer input::placeholder{ color:rgba(255,255,255,.88); }
-    .composer input:focus::placeholder{ opacity:.55; }
-    .btn{ border:none; border-radius:14px; padding:10px 14px; font-size:16px; background:#111827; color:#fff; cursor:pointer; }
-    .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-
-    .gate{ position:absolute; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.5); color:#fff; pointer-events:auto; }
-    .gate[hidden]{ display:none; }
-
-    @media (max-width: 480px){
-      .bubble{ --bubble-width: 92%; --bubble-top: 5%; }
-      .bubble__text{ font-size: 19px; --padX: 8%; --padTop: 9%; --padBottom: 11%; }
-      .composer{ --composer-bottom: 2.2%; }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:#0b0b0b;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#e9e9ee}
+    .page{min-height:100dvh;width:100vw;display:grid;place-items:center;padding:16px 0 64px}
+    .stage{position:relative;aspect-ratio:9/16;width:min(100vw,56.25vh);background:#000;overflow:hidden;border-radius:16px}
+    :root{--video-scale:1.03;--video-pos-x:50%;--video-pos-y:52%}
+    .video-layer{position:absolute;inset:0;overflow:hidden}
+    video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:var(--video-pos-x) var(--video-pos-y);transform:scale(var(--video-scale))}
+    .overlay{position:absolute;inset:0;pointer-events:none}
+    .bubble{--bubble-width:98%;--bubble-aspect:1.70;--bubble-top:5.5%;position:absolute;top:calc(var(--bubble-top) + env(safe-area-inset-top,0px));left:50%;width:min(var(--bubble-width),880px);height:calc(min(var(--bubble-width),880px)/var(--bubble-aspect));transform:translateX(-50%);background:url("cat_bubble.png") center/contain no-repeat;filter:drop-shadow(0 6px 12px rgba(0,0,0,.14))}
+    .bubble__text{--padX:7%;--padTop:8%;--padBottom:10%;position:absolute;left:var(--padX);right:var(--padX);top:var(--padTop);bottom:var(--padBottom);text-align:center;color:#0f172a;font-size:20px;line-height:1.30;letter-spacing:.2px;word-break:break-word;overflow:hidden;opacity:1;transition:opacity .45s ease;will-change:opacity}
+    .breathing{animation:breathe 1.6s ease-in-out infinite}
+    @keyframes breathe{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
+    .composer{--composer-width:92%;--composer-aspect:7.5;--composer-bottom:3%;position:absolute;left:50%;bottom:calc(var(--composer-bottom) + env(safe-area-inset-bottom,0px));width:var(--composer-width);height:calc(var(--composer-width)/var(--composer-aspect));transform:translateX(-50%);background:url("input_box.png") center/100% 100% no-repeat;display:grid;grid-template-columns:1fr auto;align-items:center;padding:0 14px;gap:10px;pointer-events:auto;z-index:10}
+    .composer input[type="text"]{width:100%;border:none;outline:none;background:transparent;font-size:18px;line-height:1.2;color:#fff;caret-color:#fff;text-shadow:0 0 1px rgba(0,0,0,.25)}
+    .composer input::placeholder{color:rgba(255,255,255,.88)}
+    .composer input:focus::placeholder{opacity:.55}
+    .btn{border:none;border-radius:14px;padding:10px 14px;font-size:16px;background:#111827;color:#fff;cursor:pointer}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .gate{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.5);color:#fff;pointer-events:auto}
+    .gate[hidden]{display:none}
+    @media (max-width:480px){
+      .bubble{--bubble-width:92%;--bubble-top:5%}
+      .bubble__text{font-size:19px;--padX:8%;--padTop:9%;--padBottom:11%}
+      .composer{--composer-bottom:2.2%}
     }
   </style>
 </head>
@@ -88,87 +46,122 @@
           <source src="cat-blink-loop.mp4" type="video/mp4"/>
         </video>
       </div>
-
       <div class="overlay">
         <section class="bubble"><div class="bubble__text" id="bubbleText">Mew~ Been waiting for you.</div></section>
-
         <form class="composer" id="composer" autocomplete="off">
           <input id="userInput" type="text" placeholder="Tell me how you feel…" maxlength="280"/>
           <button class="btn" type="submit" id="sendBtn">Send</button>
         </form>
-
         <div class="gate" id="gate"><div>Tap to enter 🐾</div></div>
       </div>
     </main>
   </div>
 
   <script>
-    /* Video切换 */
+    console.log("Front-end:", document.documentElement.getAttribute('data-version'));
+
+    /* ===== Video: switch intro -> loop without black frame ===== */
     const vidIntro = document.getElementById('vidIntro');
     const vidLoop  = document.getElementById('vidLoop');
     const gate     = document.getElementById('gate');
-    let loopStarted=false;
+    let introPlaying=false, loopStarted=false;
 
-    function startLoop(){ if(loopStarted) return; loopStarted=true; vidLoop.hidden=false; vidLoop.play().catch(()=>{}); vidIntro.hidden=true; gate.hidden=true; }
-    async function tryPlayIntro(){ try{ await vidIntro.play(); gate.hidden=true; }catch{ gate.hidden=false; } }
-    document.addEventListener('DOMContentLoaded', ()=>{ tryPlayIntro(); setTimeout(()=>{ if(!loopStarted) startLoop(); },5000); });
-    gate.addEventListener('click',()=>startLoop(),{passive:true});
-    vidIntro.addEventListener('ended',startLoop);
-    vidIntro.addEventListener('error',startLoop);
+    function startLoopOnce(){
+      if(loopStarted) return;
+      loopStarted = true;
+      vidLoop.hidden = false;
+      const onLoopPlaying = () => { vidIntro.hidden = true; gate.hidden = true; vidLoop.removeEventListener('playing', onLoopPlaying); };
+      vidLoop.addEventListener('playing', onLoopPlaying, { once:true });
+      vidLoop.play().catch(()=>{});
+    }
+    const swapToLoopSafe = () => startLoopOnce();
 
-    /* Bubble文字调节 */
-    const bubbleText=document.getElementById('bubbleText');
-    function fitText(el,{min=14,max=24}={}){ let size=max; el.style.fontSize=size+'px'; while(size>min && el.scrollHeight>el.parentElement.clientHeight){ size--; el.style.fontSize=size+'px'; } }
+    async function tryPlayIntro(){
+      try{ await vidIntro.play(); introPlaying=true; gate.hidden=true; }
+      catch{ gate.hidden=false; }
+    }
+    function warmLoop(){ try{ vidLoop.load(); }catch{} }
 
-    /* Chat逻辑 */
+    document.addEventListener('DOMContentLoaded', ()=>{
+      warmLoop(); tryPlayIntro();
+      setTimeout(()=>{ if(!introPlaying) swapToLoopSafe(); }, 5000);
+    });
+    gate.addEventListener('click', async ()=>{
+      try{ await vidIntro.play(); introPlaying=true; gate.hidden=true; } catch{ swapToLoopSafe(); }
+    }, {passive:true});
+    vidIntro.addEventListener('ended', swapToLoopSafe);
+    vidIntro.addEventListener('error', swapToLoopSafe);
+
+    /* ===== Bubble helpers ===== */
+    const bubbleText = document.getElementById('bubbleText');
+    function fitText(el,{min=14,max=24}={}){
+      const box=el.parentElement; let size=max; el.style.fontSize=size+'px';
+      while(size>min && el.scrollHeight>box.clientHeight){ size--; el.style.fontSize=size+'px'; }
+    }
+    function autoAspect(v,src){ const img=new Image(); img.onload=()=>{ if(img.naturalWidth&&img.naturalHeight){ document.documentElement.style.setProperty(v, img.naturalWidth/img.naturalHeight); } }; img.src=src+'?v='+Date.now(); }
+    fitText(bubbleText,{min:14,max:24}); autoAspect('--bubble-aspect','cat_bubble.png'); autoAspect('--composer-aspect','input_box.png');
+
+    /* ===== Chat ===== */
     const WORKER_URL="https://falling-bar-4d1a.cheryleliu2025.workers.dev/chat";
     const input=document.getElementById('userInput');
     const form=document.getElementById('composer');
     const sendBtn=document.getElementById('sendBtn');
     const seedAssistant="Mew~ Been waiting for you.";
+    const SHOW_USER_ECHO=false; // 只显示猫咪内容
 
-    function buildSystemPrompt(){ return "You are MusePiece Cat. Tone: warm, concise, slightly philosophical. Replies: 1–3 sentences. Reply ONLY in natural English."; }
+    function buildSystemPrompt(){
+      return "You are MusePiece Cat. Tone: warm, concise, slightly philosophical. Replies: 1–3 sentences. Reply ONLY in natural English.";
+    }
 
     async function askCat(userText){
-      bubbleText.textContent="…";
+      // 等待态：只显示“…”
+      bubbleText.textContent = "…";
       bubbleText.classList.add("breathing");
       fitText(bubbleText);
 
-      const messages=[{role:"system",content:buildSystemPrompt()},{role:"assistant",content:seedAssistant},{role:"user",content:userText}];
+      const messages=[
+        {role:"system",content:buildSystemPrompt()},
+        {role:"assistant",content:seedAssistant},
+        {role:"user",content:userText}
+      ];
       const payload={model:"openrouter/auto",messages,max_tokens:220,temperature:0.8};
 
       try{
-        sendBtn.disabled=true;
-        const res=await fetch(WORKER_URL,{method:"POST",credentials:"include",headers:{"Content-Type":"application/json","Accept-Language":"en-US,en;q=0.9"},body:JSON.stringify(payload)});
-        const data=await res.json();
-        const reply=data?.choices?.[0]?.message?.content || "Could you say that again?";
+        sendBtn.disabled = true;
+        const res = await fetch(WORKER_URL,{
+          method:"POST", credentials:"include",
+          headers:{ "Content-Type":"application/json", "Accept-Language":"en-US,en;q=0.9" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content || "Could you say that again?";
 
         bubbleText.classList.remove("breathing");
-        bubbleText.style.opacity=0;
+        bubbleText.style.opacity = 0;
         setTimeout(()=>{
-          bubbleText.textContent=reply;
-          bubbleText.style.opacity=1;
+          bubbleText.textContent = reply;
+          bubbleText.style.opacity = 1;
           fitText(bubbleText);
-          input.value="";   // 👉 猫咪说话时再清空输入框
-        },250);
+          input.value = "";          // 👉 猫咪回复出现时再清空输入框
+        }, 250);
+
       }catch(err){
         bubbleText.classList.remove("breathing");
-        bubbleText.textContent="Network is a bit slow. Try again in a moment, mew~";
+        bubbleText.textContent = "Network is a bit slow. Try again in a moment, mew~";
         fitText(bubbleText);
         console.error(err);
       }finally{
-        sendBtn.disabled=false;
+        sendBtn.disabled = false;
         input.focus();
       }
     }
 
-    form.addEventListener('submit',e=>{
+    form.addEventListener('submit', (e)=>{
       e.preventDefault();
-      const text=(input.value||'').trim();
-      if(!text||sendBtn.disabled)return;
+      const text = (input.value||'').trim();
+      if(!text || sendBtn.disabled) return;
       askCat(text);
     });
   </script>
 </body>
 </html>
-
