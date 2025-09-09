@@ -6,21 +6,22 @@
   <title>MusePiece · Cat Demo</title>
   <style>
     * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; background:#0b0b0b; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
-    .page { height: 100dvh; width: 100vw; display: grid; place-items: center; }
+    html, body { height: 100%; margin: 0; background:#0b0b0b;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:#e9e9ee; }
+    .page { min-height: 100dvh; width: 100vw; display: grid; place-items: center; padding: 16px 0 64px; }
     .stage { position: relative; aspect-ratio: 9/16; width: min(100vw, 56.25vh); background:#000; overflow:hidden; border-radius:16px; }
 
-    /* —— 视频（防尾巴贴边） —— */
+    /* —— Video —— */
     :root { --video-scale:1.03; --video-pos-x:50%; --video-pos-y:52%; }
     .video-layer { position:absolute; inset:0; overflow:hidden; }
     video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:var(--video-pos-x) var(--video-pos-y); transform:scale(var(--video-scale)); }
 
     .overlay { position:absolute; inset:0; pointer-events:none; }
 
-    /* —— 气泡（使用你的 PNG，带尾巴，不裁剪） —— */
+    /* —— Speech bubble —— */
     .bubble{
       --bubble-width: 98%;
-      --bubble-aspect: 1.70;    /* 会被 PNG 实际比例覆盖 */
+      --bubble-aspect: 1.70;    /* Will be updated by PNG real ratio */
       --bubble-top: 5.5%;
       position:absolute;
       top: calc(var(--bubble-top) + env(safe-area-inset-top,0px));
@@ -32,6 +33,7 @@
       overflow: visible;
       border-radius: 0;
       filter: drop-shadow(0 6px 12px rgba(0,0,0,.14));
+      pointer-events:none;
     }
     .bubble__text{
       --padX: 7%;
@@ -39,15 +41,14 @@
       --padBottom: 10%;
       position:absolute; left:var(--padX); right:var(--padX); top:var(--padTop); bottom:var(--padBottom);
       text-align:center; color:#0f172a;
-      font-size:20px;
-      line-height:1.30; letter-spacing:.2px;
+      font-size:20px; line-height:1.30; letter-spacing:.2px;
       word-break:break-word; hyphens:auto; overflow:hidden;
     }
 
-    /* —— 输入框：你的 PNG + 白色文字 —— */
+    /* —— Composer —— */
     .composer{
       --composer-width: 92%;
-      --composer-aspect: 7.5;  /* 会被 PNG 实际比例覆盖 */
+      --composer-aspect: 7.5;  /* Will be updated by PNG real ratio */
       --composer-bottom: 3%;
       position:absolute; left:50%;
       bottom: calc(var(--composer-bottom) + env(safe-area-inset-bottom,0px));
@@ -60,31 +61,55 @@
     }
     .composer input[type="text"]{
       width:100%; border:none; outline:none; background:transparent;
-      font-size:18px; line-height:1.2;
-      color:#fff !important; caret-color:#fff !important;
+      font-size:18px; line-height:1.2; color:#fff !important; caret-color:#fff !important;
       text-shadow:0 0 1px rgba(0,0,0,.25);
     }
-    .composer input::placeholder,
-    .composer input::-webkit-input-placeholder{ color:rgba(255,255,255,.88) !important; }
-    .composer input:focus::placeholder,
-    .composer input:focus::-webkit-input-placeholder{ opacity:.55; }
+    .composer input::placeholder{ color:rgba(255,255,255,.88) !important; }
+    .composer input:focus::placeholder{ opacity:.55; }
     .btn{ border:none; border-radius:14px; padding:10px 14px; font-size:16px; background:#111827; color:#fff; cursor:pointer; }
 
     .gate{ position:absolute; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.5); color:#fff; pointer-events:auto; }
     .gate[hidden]{ display:none; }
 
-    /* —— 手机竖屏：气泡略缩小，避免挡猫 —— */
+    /* —— Quote Card (preview below the stage) —— */
+    .quote-wrap{ width: min(100vw, 56.25vh); margin: 18px auto 0; }
+    .quote-card{
+      position:relative; width:100%; aspect-ratio:9/16;
+      margin:0 auto; border-radius:14px; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,.45);
+      background:#000;
+    }
+    .quote-bg{ width:100%; height:100%; object-fit:cover; display:block }
+
+    /* Safe area to match your translucent box; tweak % with your UI later if needed */
+    #quote-box{
+      --box-top: 9%;
+      --box-left: 8%;
+      --box-right: 8%;
+      --box-height: 18%;
+      position:absolute; z-index:2;
+      top:var(--box-top);
+      left:var(--box-left);
+      width:calc(100% - var(--box-left) - var(--box-right));
+      height:var(--box-height);
+      display:flex; align-items:center; justify-content:center;
+      padding:0 2%; text-align:center; overflow:hidden;
+    }
+    #quote-text{
+      color:#fefefe; font-family:"Georgia","Times New Roman",serif;
+      font-weight:600; line-height:1.35;
+      word-break:break-word; white-space:pre-wrap;
+      text-shadow:0 2px 4px rgba(0,0,0,.6);
+      font-size:clamp(20px,2.8vw,42px); padding:0 .2em;
+    }
+
+    .toolbar{ display:flex; gap:10px; justify-content:center; margin:10px 0 0; }
+    .toolbar button{ border:1px solid #2a2a2e; background:#131318; color:#e9e9ee; padding:10px 14px; border-radius:12px; cursor:pointer; font-size:14px }
+    .toolbar button:hover{ border-color:#3a3a40 }
+
+    /* Mobile tweaks */
     @media (max-width: 480px){
-      .bubble{
-        --bubble-width: 92%;
-        --bubble-top: 5%;
-        width: var(--bubble-width);
-        height: calc(var(--bubble-width) / var(--bubble-aspect));
-      }
-      .bubble__text{
-        font-size: 19px;
-        --padX: 8%; --padTop: 9%; --padBottom: 11%;
-      }
+      .bubble{ --bubble-width: 92%; --bubble-top: 5%; }
+      .bubble__text{ font-size: 19px; --padX: 8%; --padTop: 9%; --padBottom: 11%; }
       .composer{ --composer-bottom: 2.2%; }
     }
   </style>
@@ -93,7 +118,6 @@
   <div class="page">
     <main class="stage">
       <div class="video-layer">
-        <!-- 加 autoplay，提高首屏成功率 -->
         <video id="vidIntro" playsinline muted preload="auto" autoplay>
           <source src="cat-yawn-blink.mp4" type="video/mp4"/>
         </video>
@@ -101,175 +125,127 @@
           <source src="cat-blink-loop.mp4" type="video/mp4"/>
         </video>
       </div>
+
       <div class="overlay">
-        <section class="bubble">
-          <div class="bubble__text" id="bubbleText">Mew~ Been waiting for you.</div>
-        </section>
+        <section class="bubble"><div class="bubble__text" id="bubbleText">Mew~ Been waiting for you.</div></section>
 
         <form class="composer" id="composer" autocomplete="off">
-          <input id="userInput" type="text" placeholder="Type what you’re feeling…" maxlength="280"/>
+          <input id="userInput" type="text" placeholder="Tell me how you feel…" maxlength="280"/>
           <button class="btn" type="submit">Send</button>
         </form>
 
         <div class="gate" id="gate"><div>Tap to enter 🐾</div></div>
       </div>
     </main>
+
+    <!-- Quote Card Preview -->
+    <section class="quote-wrap">
+      <div class="quote-card" id="quote-card">
+        <img src="quote-card-cat-v1.jpg" alt="MusePiece Quote Card" class="quote-bg"/>
+        <div id="quote-box"><div id="quote-text"></div></div>
+      </div>
+      <div class="toolbar">
+        <button id="btn-quote">Generate Quote</button>
+        <button id="btn-save">Save 1080×1920</button>
+      </div>
+    </section>
   </div>
 
+  <!-- html2canvas for export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script>
-    /* =============== 背景视频：先播 intro，再切 loop（多重兜底） =============== */
+    /* ================= Video flow (intro -> loop) ================= */
     const vidIntro = document.getElementById('vidIntro');
     const vidLoop  = document.getElementById('vidLoop');
     const gate     = document.getElementById('gate');
-
-    let introTriedAutoplay = false;
 
     function swapToLoop(){
       vidIntro.hidden = true;
       vidLoop.hidden = false;
       vidLoop.currentTime = 0;
       vidLoop.play().catch(()=>{});
-      gate.hidden = true; // 放行
+      gate.hidden = true;
     }
-
     async function tryPlayIntro(){
-      try {
-        await vidIntro.play();
-        gate.hidden = true;
-        introTriedAutoplay = true;
-      } catch (e) {
-        // 自动播放失败：显示 gate，等待用户点击
-        gate.hidden = false;
-      }
+      try{ await vidIntro.play(); gate.hidden = true; }
+      catch{ gate.hidden = false; }
     }
-
-    // 首次进入：尝试自动播放；失败则显示 gate
     document.addEventListener('DOMContentLoaded', () => {
       tryPlayIntro();
-
-      // 兜底：5 秒内 intro 仍未开始播放 → 切 loop
       setTimeout(() => {
         const notPlaying = vidIntro.currentTime === 0 || vidIntro.paused;
         if (!vidIntro.hidden && notPlaying) swapToLoop();
       }, 5000);
     });
-
-    // 用户点击 gate：再试一次 intro；仍失败就切 loop
-    gate.addEventListener('click', async () => {
-      try {
-        await vidIntro.play();
-        gate.hidden = true;
-      } catch {
-        swapToLoop();
-      }
-    }, { passive:true });
-
-    // 如果 intro 能播放到头，正常切换到 loop
+    gate.addEventListener('click', async () => { try{ await vidIntro.play(); gate.hidden = true; } catch{ swapToLoop(); } }, { passive:true });
     vidIntro.addEventListener('ended', swapToLoop);
-    // 如果 intro 报错（资源丢失/路径错误），直接切 loop
     vidIntro.addEventListener('error', swapToLoop);
-    // 如果加载好但没自动播，尽量再尝试一次
-    vidIntro.addEventListener('canplay', () => {
-      if (!introTriedAutoplay && gate.hidden) {
-        tryPlayIntro();
-      }
-    });
 
-    /* =============== 文案自适应 & PNG 实际比例 =============== */
+    /* ================= Bubble text fit & PNG ratio ================= */
     const bubbleText = document.getElementById('bubbleText');
     function fitText(el, {min=14, max=24}={}){
       const box = el.parentElement;
       let size = max; el.style.fontSize = size + 'px';
-      while (size > min && el.scrollHeight > box.clientHeight) {
-        size -= 1; el.style.fontSize = size + 'px';
-      }
+      while (size > min && el.scrollHeight > box.clientHeight) { size -= 1; el.style.fontSize = size + 'px'; }
     }
     function autoAspect(varName, src){
       const img = new Image();
-      img.onload = () => {
-        if (img.naturalWidth && img.naturalHeight) {
-          document.documentElement.style.setProperty(varName, img.naturalWidth / img.naturalHeight);
-        }
-      };
-      img.src = src + '?v=' + Date.now(); // 防缓存
+      img.onload = () => { if (img.naturalWidth && img.naturalHeight) {
+        document.documentElement.style.setProperty(varName, img.naturalWidth / img.naturalHeight);
+      }};
+      img.src = src + '?v=' + Date.now();
     }
     fitText(bubbleText, {min:14, max:24});
     autoAspect('--bubble-aspect','cat_bubble.png');
     autoAspect('--composer-aspect','input_box.png');
 
-    /* =============== 聊天逻辑（调用你的 Worker /chat） =============== */
-    const WORKER_URL = "https://falling-bar-4d1a.cheryleliu2025.workers.dev/chat";
+    /* ================= Chat to Worker (FORCE ENGLISH) ================= */
+    const WORKER_BASE = "https://falling-bar-4d1a.cheryleliu2025.workers.dev"; // your Worker
+    const WORKER_URL  = WORKER_BASE + "/chat";
     const input  = document.getElementById('userInput');
     const form   = document.getElementById('composer');
 
-    // 语言检测（是否含有中文字符）
-    const hasChinese = (s) => /[\u4e00-\u9fff]/.test(s);
-
-    // 每轮对话的 system 提示：默认英文；若用户输入含中文则改为中文
-    function buildSystemPrompt(userText){
-      const baseStyleEn = "You are MusePiece Cat. Tone: warm, concise, slightly philosophical. Keep replies short (1–3 sentences). Avoid long paragraphs.";
-      const baseStyleZh = "你是 MusePiece 的猫。语气温柔、简洁、带一点哲思；回复尽量短（1–3 句），避免长段落。";
-      return hasChinese(userText)
-        ? "Reply ONLY in Simplified Chinese. " + baseStyleZh
-        : "Reply ONLY in natural English. " + baseStyleEn;
-    }
-
     const seedAssistant = "Mew~ Been waiting for you.";
 
-    async function askCat(userText){
-      // 先显示用户文本
-      bubbleText.textContent = userText;
-      fitText(bubbleText, {min:14, max:24});
+    function buildSystemPrompt(){
+      // Force English to avoid CN output
+      return "You are MusePiece Cat. Tone: warm, concise, slightly philosophical. Keep replies short (1–3 sentences). Avoid long paragraphs. Reply ONLY in natural English.";
+    }
 
-      // 思考中
-      const thinking = "…";
-      setTimeout(()=>{ bubbleText.textContent = thinking; fitText(bubbleText, {min:14, max:24}); }, 80);
+    async function askCat(userText){
+      bubbleText.textContent = userText; fitText(bubbleText, {min:14, max:24});
+      setTimeout(()=>{ bubbleText.textContent = "…"; fitText(bubbleText, {min:14, max:24}); }, 80);
 
       const messages = [
-        { role: "system", content: buildSystemPrompt(userText) },
+        { role: "system", content: buildSystemPrompt() },
         { role: "assistant", content: seedAssistant },
         { role: "user", content: userText }
       ];
 
-      const payload = {
-        model: "openrouter/auto",
-        messages,
-        max_tokens: 220,
-        temperature: 0.8
-      };
+      const payload = { model: "openrouter/auto", messages, max_tokens: 220, temperature: 0.8 };
 
       try{
         const res = await fetch(WORKER_URL, {
           method:"POST",
+          credentials:"include",                            // <- keep cookies for quote frequency
           headers:{
             "Content-Type":"application/json",
-            "Accept-Language": hasChinese(userText) ? "zh-CN,zh;q=0.9" : "en-US,en;q=0.9"
+            "Accept-Language": "en-US,en;q=0.9"            // <- force English
           },
           body: JSON.stringify(payload)
         });
-        if(!res.ok) throw new Error("Upstream " + res.status);
         const data = await res.json();
-        const reply = data?.choices?.[0]?.message?.content || (hasChinese(userText) ? "没听清，再说一次？" : "I didn’t catch that—could you say it again?");
+        const reply = data?.choices?.[0]?.message?.content || "Could you say that again?";
+        bubbleText.textContent = reply; fitText(bubbleText, {min:14, max:24});
 
-        bubbleText.textContent = reply;
-        fitText(bubbleText, {min:14, max:24});
-
-        if (maybeQuote(reply)) {
-          // 预留：createQuoteCard(reply);
-        }
+        // If Worker attached a quote_block, render the card + copy short link
+        if (data?.quote_block) applyQuoteBlock(data.quote_block);
 
       }catch(err){
-        const fallbackMsg = hasChinese(userText) ? "网络有点慢，稍后再试一下喵～" : "Network is a bit slow. Try again in a moment, mew~";
-        bubbleText.textContent = fallbackMsg;
+        bubbleText.textContent = "Network is a bit slow. Try again in a moment, mew~";
         fitText(bubbleText, {min:14, max:24});
         console.error(err);
       }
-    }
-
-    function maybeQuote(text){
-      const trigger = ["当下","温柔","呼吸","breathe","slow down","not a puzzle","it is not a puzzle"];
-      const lower = text.toLowerCase();
-      return trigger.some(k => lower.includes(k) || text.includes(k));
     }
 
     form.addEventListener('submit', (e)=>{
@@ -279,6 +255,72 @@
       input.value = '';
       askCat(text);
     });
+
+    /* ================= Quote Card (render + save) ================= */
+    const $ = s => document.querySelector(s);
+    const quoteTextEl = $('#quote-text');
+    const quoteBoxEl  = $('#quote-box');
+
+    function applyQuoteBlock(quoteBlock){
+      if (!quoteBlock?.quote_card) return;
+      quoteTextEl.textContent = quoteBlock.quote;
+      autoFitToBox(quoteTextEl, quoteBoxEl);
+      // Copy short link and nudge to share
+      navigator.clipboard.writeText(quoteBlock.share_url || "https://tinyurl.com/musecard");
+      toast("Card ready. Short link copied — share it in your IG Story 🐾");
+    }
+
+    function autoFitToBox(textEl, boxEl){
+      const maxSize = 44, minSize = 16;
+      let size = Math.min(maxSize, parseFloat(getComputedStyle(textEl).fontSize) || 32);
+      textEl.style.fontSize = size + 'px';
+      for(let i=0;i<50;i++){
+        if (textEl.scrollHeight <= boxEl.clientHeight && textEl.scrollWidth <= boxEl.clientWidth) break;
+        size -= 1;
+        if (size <= minSize){ textEl.style.fontSize = minSize+'px'; break; }
+        textEl.style.fontSize = size + 'px';
+      }
+    }
+
+    document.getElementById('btn-quote').addEventListener('click', async () => {
+      try{
+        const res = await fetch(WORKER_BASE + "/quote", {
+          method:'GET', credentials:'include',
+          headers:{ "Accept-Language": "en-US,en;q=0.9" } // <- force English
+        });
+        const data = await res.json();
+        if (data?.quote_card) applyQuoteBlock(data);
+      }catch(e){ toast("Hmm… quote took a little nap. Try again."); console.error(e); }
+    });
+
+    document.getElementById('btn-save').addEventListener('click', saveQuoteCard);
+    async function saveQuoteCard(){
+      const card = document.getElementById('quote-card');
+      const canvas = await html2canvas(card, { backgroundColor:null, scale: 2 });
+      const W=1080, H=1920;
+      const out = document.createElement('canvas'); out.width=W; out.height=H;
+      const ctx = out.getContext('2d'); ctx.drawImage(canvas, 0, 0, W, H);
+
+      const a = document.createElement('a');
+      a.download = 'MusePiece-Quote.png';
+      a.href = out.toDataURL('image/png');
+      a.click();
+
+      toast("Mew~ Card saved. Paste the link in your Story 🐾");
+    }
+
+    function toast(msg){
+      const t = document.createElement('div');
+      t.textContent = msg;
+      Object.assign(t.style,{
+        position:'fixed',left:'50%',bottom:'24px',transform:'translateX(-50%)',
+        background:'rgba(20,20,24,.92)',color:'#fff',padding:'10px 14px',
+        borderRadius:'12px',fontSize:'14px',zIndex:9999
+      });
+      document.body.appendChild(t);
+      setTimeout(()=>t.remove(),2200);
+    }
   </script>
 </body>
 </html>
+
