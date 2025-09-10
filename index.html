@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-version="v-clean-1">
+<html lang="en" data-version="v-clean-2">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate" />
@@ -60,7 +60,7 @@
   <script>
     console.log("Front-end:", document.documentElement.getAttribute('data-version'));
 
-    /* ===== Video: switch intro -> loop without black frame ===== */
+    /* ===== Video: switch intro -> loop ===== */
     const vidIntro = document.getElementById('vidIntro');
     const vidLoop  = document.getElementById('vidLoop');
     const gate     = document.getElementById('gate');
@@ -86,18 +86,13 @@
       warmLoop(); tryPlayIntro();
       setTimeout(()=>{ if(!introPlaying) swapToLoopSafe(); }, 5000);
     });
-    gate.addEventListener('click', async ()=>{
-      try{ await vidIntro.play(); introPlaying=true; gate.hidden=true; } catch{ swapToLoopSafe(); }
-    }, {passive:true});
+    gate.addEventListener('click', async ()=>{ try{ await vidIntro.play(); introPlaying=true; gate.hidden=true; } catch{ swapToLoopSafe(); } }, {passive:true});
     vidIntro.addEventListener('ended', swapToLoopSafe);
     vidIntro.addEventListener('error', swapToLoopSafe);
 
     /* ===== Bubble helpers ===== */
     const bubbleText = document.getElementById('bubbleText');
-    function fitText(el,{min=14,max=24}={}){
-      const box=el.parentElement; let size=max; el.style.fontSize=size+'px';
-      while(size>min && el.scrollHeight>box.clientHeight){ size--; el.style.fontSize=size+'px'; }
-    }
+    function fitText(el,{min=14,max=24}={}){ const box=el.parentElement; let size=max; el.style.fontSize=size+'px'; while(size>min && el.scrollHeight>box.clientHeight){ size--; el.style.fontSize=size+'px'; } }
     function autoAspect(v,src){ const img=new Image(); img.onload=()=>{ if(img.naturalWidth&&img.naturalHeight){ document.documentElement.style.setProperty(v, img.naturalWidth/img.naturalHeight); } }; img.src=src+'?v='+Date.now(); }
     fitText(bubbleText,{min:14,max:24}); autoAspect('--bubble-aspect','cat_bubble.png'); autoAspect('--composer-aspect','input_box.png');
 
@@ -107,20 +102,20 @@
     const form=document.getElementById('composer');
     const sendBtn=document.getElementById('sendBtn');
     const seedAssistant="Mew~ Been waiting for you.";
-    const SHOW_USER_ECHO=false; // 只显示猫咪内容
+    const SHOW_USER_ECHO=false;
 
     function buildSystemPrompt(){
-      return "You are MusePiece Cat. Tone: warm, concise, slightly philosophical. Replies: 1–3 sentences. Reply ONLY in natural English.";
+      // 前端不再覆盖 Worker 人设，只留空或极简提醒
+      return "";
     }
 
     async function askCat(userText){
-      // 等待态：只显示“…”
       bubbleText.textContent = "…";
       bubbleText.classList.add("breathing");
       fitText(bubbleText);
 
       const messages=[
-        {role:"system",content:buildSystemPrompt()},
+        ...(buildSystemPrompt() ? [{role:"system",content:buildSystemPrompt()}] : []),
         {role:"assistant",content:seedAssistant},
         {role:"user",content:userText}
       ];
@@ -142,7 +137,7 @@
           bubbleText.textContent = reply;
           bubbleText.style.opacity = 1;
           fitText(bubbleText);
-          input.value = "";          // 👉 猫咪回复出现时再清空输入框
+          input.value = "";
         }, 250);
 
       }catch(err){
