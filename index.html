@@ -104,8 +104,17 @@
     const seedAssistant="Mew~ Been waiting for you.";
     const SHOW_USER_ECHO=false;
 
+    // === 新增：生成并持久化 userId ===
+    function getUserId() {
+      let uid = localStorage.getItem("musepiece_uid");
+      if (!uid) {
+        uid = crypto.randomUUID();
+        localStorage.setItem("musepiece_uid", uid);
+      }
+      return uid;
+    }
+
     function buildSystemPrompt(){
-      // 前端不再覆盖 Worker 人设，只留空或极简提醒
       return "";
     }
 
@@ -119,7 +128,15 @@
         {role:"assistant",content:seedAssistant},
         {role:"user",content:userText}
       ];
-      const payload={model:"openrouter/auto",messages,max_tokens:220,temperature:0.8};
+
+      // === 新增：带上 userId ===
+      const payload={
+        userId: getUserId(),
+        model:"openrouter/auto",
+        messages,
+        max_tokens:220,
+        temperature:0.8
+      };
 
       try{
         sendBtn.disabled = true;
